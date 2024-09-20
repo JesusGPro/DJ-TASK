@@ -1,0 +1,5 @@
+venv
+user.txt
+git.txt
+requirements.txt
+__pycache__

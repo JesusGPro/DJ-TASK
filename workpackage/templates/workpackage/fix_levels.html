@@ -1,0 +1,14 @@
+{% extends 'tasks/base.html' %}
+{% block content %}
+
+<div class="container">
+    <h1>Fix Number of Levels</h1>
+    <form method="post">
+      {% csrf_token %}
+      <label for="num_levels">How many levels do you want to create?</label>
+      <input type="number" id="num_levels" name="num_levels" required>
+      <button class="btn btn-primary" type="submit">Next</button>
+    </form>
+  </div>
+
+{% endblock %}

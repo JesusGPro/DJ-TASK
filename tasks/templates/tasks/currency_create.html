@@ -1,0 +1,25 @@
+{% extends 'tasks/base.html' %}
+{% block content %}
+
+<div class="container">
+  <h1>Create Project Currencies rates</h1>
+  <form method="post">
+    {% csrf_token %}
+      <div class="mb-3">
+        <label for="eur_sar" class="form-label" id="eur_sar">Introduce rate for: 1 EUR : rate SAR</label>
+        <input type="number" class="form-control" id="name" name="eur_sar" step="0.01" />
+      </div>
+      <div class="mb-3">
+        <label for="usd_sar" class="form-label" id="usd_sar">Introduce rate for: 1 USD : rate SAR</label>
+        <input type="number" class="form-control" id="usd_sar" name="usd_sar" step="0.01" />
+      </div>
+      <div class="mb-3">
+        <label for="eur_usd" class="form-label" id="eur_usd">Introduce rate for: 1 EUR : rate USD</label>
+        <input type="number" class="form-control" id="eur_usd" name="eur_usd" step="0.01" />
+      </div>
+      <br>
+      <button type="submit" class="btn btn-primary">Submit</button>
+    </form>
+  </div>
+
+{% endblock %}

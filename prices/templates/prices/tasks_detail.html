@@ -1,0 +1,218 @@
+{% extends 'tasks/base.html' %}
+{% block content %}
+{% load tags %}
+
+<div class="container">
+    <h1>Task Detail, project id: {{project_id}}</h1>
+    <table class="table table-bordered table-striped">
+        <thead class="thead-dark">
+          <tr>
+            <th>Id</th>
+            <th>Code</th>
+            <th>Task Name</th>
+            <th>Unit</th>
+            <th></th>
+            <th></th>
+            <th>Price</th>
+            <th>Currency</th>
+            <th>Project</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>{{ task.id }}</td>
+            <td width="150px">{{ task.code }}</td>
+            <td width="350px">{{ task.name }}</td>
+            <td width="100px">{{ task.unit }}</td>
+            <td></td>
+            <td></td>
+            
+            <td width="100px">{{ task.price }}</td>
+            <td id="task-currency" width="100px" value="{{ task.currency }}">{{ task.currency }}</td>
+            <td>{{ task.project }}</td>
+            <td></td>
+          </tr>
+        </tbody>
+        <tbody>
+          <tr>
+            <th>Id</th>
+            <th>Code</th>
+            <th>Task Name</th>
+            <th>Unit</th>
+            <th>Quantity</th>
+            <th>Price</th>
+            <th>Subtotal</th>
+            <th>Currency</th>
+            <th>Project</th>
+            <th></th>
+          </tr>
+          {% for component, denomination, unit, price_comp in zipped_data %}
+          <tr>
+            <td width="150px">{{ component.id }}</td>
+            <td width="350px">{{ component.code }}</td>
+            <td width="100px">{{ denomination }}</td>
+            <td width="100px">{{ unit }}</td>
+            <td width="100px">{{ component.quantity }}</td>
+            <td width="100px">{{ price_comp }}</td>
+            <td width="100px" >{% multiply price_comp component.quantity %}</td>
+            <td width="100px">{{ task.currency }}</td>
+            <td width="100px">{{ task.project }}</td>
+            <td>
+            <form action="{% url 'tasks_comp_delete' project_id=project_id pk=task.id comp_id=component.id %}" method="post">
+              {% csrf_token %}
+              <button type="submit" class="btn btn-danger">Delete</button>
+            </form>
+          </td>
+          </tr>
+          
+          {% endfor %}
+          <tr>
+            <th></th>
+            <th></th>
+            <th>Price Grand Total:</th>
+            <th></th>
+            <th></th>
+            <th></th>
+            <th>{{ grand_total }}</th>
+            <th></th>
+            <th></th>
+            <th></th>
+          </tr>
+        </tbody>
+      </table>
+       
+</div>
+<div class="container">
+<h2>Task Components</h2>
+      <form method="post" action="{% url 'tasks_add_component' project_id=project_id pk=task.id %}">
+        {% csrf_token %}
+        <input type="hidden" name="task" value="{{ task.id }}" />
+        <table class="table table-bordered table-striped">
+          <thead class="thead-dark">
+            <tr>
+              <th>Code - Denomination - Unit - Price - Currency - Tag </th>
+              <th>Quantity</th>
+            </tr>
+          </thead>
+          <tbody id="task-components">
+            <tr>
+              <td>
+                <select id="component-select" class="form-control" name="code">
+                  {% for price in prices %}
+                    <option value="{{ price.code }}">{{price.id}}-{{ price.code }} - {{ price.denomination }} - {{ price.unit }} - {{price.price}} - {{ price.currency }} - {{price.tag}}</option>
+                    <p>Price code: {{ price.id }} </p>
+                  {% endfor %}
+                  
+                </select>
+        
+                {% comment %} <input type="hidden" name="code" value="{{ prices.0.code }}"> {% endcomment %}
+              </td>
+              <td>
+                <input type="number" id="quantity-input" value="1.000" step="0.001" class="form-control" onblur="updateTotalPrice()" name="quantity">
+              </td>
+            </tr>
+          </tbody>
+        </table>
+
+        <button type="submit" class="btn btn-primary" id="add-component">Add Component</button>
+        <br><br>
+        
+        </form>
+</div>
+
+
+
+{% comment %} <script>
+  function getTaskCurrency(callback) {
+    document.addEventListener("DOMContentLoaded", function() {
+      var taskCurrency = document.getElementById('task-currency').innerHTML;
+      callback(taskCurrency);
+    });
+  }
+
+  function getPriceFromSelect() {
+    var selectedPriceId = document.getElementById('component-select').value;
+    var priceInfo = selectedPriceId.split(' ');
+    return {
+      price: priceInfo[0],
+      currency: priceInfo[1],
+    };
+  }
+
+  function updateTotalPrice() {
+    var price;
+    var currency;
+    var taskCurrency;
+    var quantity;
+    var totalPrice;
+
+    getTaskCurrency(function(taskCurrencyValue) {
+      taskCurrency = taskCurrencyValue;
+
+      document.getElementById('component-select').addEventListener('change', function() {
+        var priceInfo = getPriceFromSelect();
+        price = priceInfo.price;
+        currency = priceInfo.currency;
+
+        quantity = document.getElementById('quantity-input').value;
+
+        if (currency !== taskCurrency) {
+          // Load the currency_rates.json file using XMLHttpRequest
+          var xhr = new XMLHttpRequest();
+          xhr.open('GET', '../../../../../currency_rates.json', true);
+          xhr.onload = function() {
+            if (xhr.status === 200) {
+              var conversionRates = JSON.parse(xhr.responseText);
+              var conversionRate = conversionRates[currency + '_' + taskCurrency];
+
+              price = price * conversionRate;
+              totalPrice = price * quantity;
+
+              // Update the price with the converted value
+              document.getElementById('total-price').value = totalPrice.toFixed(2);
+            }
+          };
+          xhr.send();
+        } else {
+          totalPrice = price * quantity;
+          document.getElementById('total-price').value = totalPrice.toFixed(2);
+        }
+      });
+
+      document.getElementById('quantity-input').addEventListener('blur', function() {
+        quantity = this.value;
+        var priceInfo = getPriceFromSelect();
+        price = priceInfo.price;
+        currency = priceInfo.currency;
+        
+        if (currency !== taskCurrency) {
+          // Load the currency_rates.json file using XMLHttpRequest
+          var xhr = new XMLHttpRequest();
+          xhr.open('GET', '../../../../../currency_rates.json', true);
+          xhr.onload = function() {
+            if (xhr.status === 200) {
+              var conversionRates = JSON.parse(xhr.responseText);
+              var conversionRate = conversionRates[currency + '_' + taskCurrency];
+
+              price = price * conversionRate;
+              totalPrice = price * quantity;
+
+              // Update the price with the converted value
+              document.getElementById('total-price').value = totalPrice.toFixed(2);
+            }
+          };
+          xhr.send();
+        } else {
+          totalPrice = price * quantity;
+          document.getElementById('total-price').value = totalPrice.toFixed(2);
+        }
+      });
+    });
+  }
+  
+  // Call updateTotalPrice() to set up the event listeners
+  updateTotalPrice();
+</script> {% endcomment %}
+
+{% endblock %}

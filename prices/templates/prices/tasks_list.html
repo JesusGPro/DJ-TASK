@@ -1,0 +1,81 @@
+{% extends 'tasks/base.html' %}
+{% block content %}
+
+
+<div class="container">
+    <h1>Task List for for {{ project.name }}</h1>
+    <table class="table table-bordered table-striped">
+        <thead class="thead-dark">
+          <tr>
+            <th>Id</th>
+            <th>Code</th>
+            <th>Task Name</th>
+            <th>Unit</th>
+            <th>Price</th>
+            <th>Currency</th>
+            <th>Project</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for task in tasks %}
+          <tr>
+            <td>{{ task.id }}</td>
+            <td width="150px">{{ task.code }}</td>
+            <td width="350px">{{ task.name }}</td>
+            <td width="100px">{{ task.unit }}</td>
+            <td width="100px">{{ task.price }}</td>
+            <td width="100px">{{ task.currency }}</td>
+            <td>
+              <div class="row">
+                <div class="col-md-6">
+                  {{ task.project }}
+                </div>
+                <div class="col-md-3">
+                  <a class="btn btn-warning" href="{% url 'tasks_detail' project_id=project_id pk=task.id %}">View/Edit</a>
+                </div>
+                <div class="col-md-3">
+                  <form action="{% url 'tasks_delete' project_id=project_id pk=task.id %}" method="post">
+                    {% csrf_token %}
+                    <button type="submit" class="btn btn-danger">Delete</button>
+                  </form>
+                </div>
+              </div>
+            </td>
+          </tr>
+          {% empty %}
+          <tr>
+            <td colspan="7">No tasks available.</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+        
+      </table>      
+      <form method="post">
+        {% csrf_token %}
+        <label class="form-label" for="code">Code</label>
+        <input class="form-control" type="text" id="task_code" name="code"><br>
+        <label class="form-label" for="name">Task Name</label>
+        <input class="form-control" type="text" id="task_name" name="name"><br>
+        <label class="form-label" for="unit">Unit</label>
+        <input class="form-control" type="text" id="project" name="unit"><br>
+        <label class="form-label" for="price">Price</label>
+        <input class="form-control" type="number" id="price" name="price"><br>
+        <label class="form-label" for="currency">Currency</label>
+        <input class="form-control" id="currency" name="currency" value={{ project.currency }} readonly>
+        {% comment %} <select class="form-control" id="currency" name="currency">
+            <option value="">Choose currency</option>
+            <option value="USD">USD</option>
+            <option value="EUR">EUR</option>
+            <option value="SAR">SAR</option>
+            <option value="No currency">No currency</option>
+        </select><br> {% endcomment %}
+
+        <input type="submit" class="btn btn-primary" value="Create Task" ><br><br><br>
+        <input type="hidden" name="project" value="{{ project.id }}">
+      </form>
+    
+</div>
+
+
+
+{% endblock %}

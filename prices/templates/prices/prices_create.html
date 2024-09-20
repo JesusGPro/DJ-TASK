@@ -1,0 +1,233 @@
+{% extends 'tasks/base.html' %}
+{% block content %}
+
+<div class="container">
+<h1>Create Price for {{ project.name }} and user {{ user }}</h1>
+<table class="table table-bordered table-striped">
+  <thead class="thead-dark">
+    <tr>
+      <th>id</th>
+      <th>Code</th>
+      <th>Denomination</th>
+      <th>Unit</th>
+      <th>Price</th>
+      <th>Currency</th>
+      <th>Tag</th>
+      <th>Reference</th>
+      <th>Project</th>
+      <th>User</th>
+    </tr>
+  </thead>
+  <tbody id="row-container">
+    {% for price in prices %}
+    <tr id="row-{{ forloop.counter }}">
+      <th>
+        {{ price.id }}
+      </th>
+      <th>
+        <input id="input-code-{{ price.id }}" type="text" size="15" value="{{ price.code }}" onblur="updatePrice('{{ price.id }}', 'code')">
+      </th>
+      <th>
+        <input id="input-denomination-{{ price.id }}" type="text" size="20" value="{{ price.denomination }}" onblur="updatePrice('{{ price.id }}', 'denomination')">
+      </th>
+      <th>
+        <input id="input-unit-{{ price.id }}" type="text" size="3" value="{{ price.unit }}" onblur="updatePrice('{{ price.id }}', 'unit')">
+      </th>
+      <th>
+        <input id="input-price-{{ price.id }}" type="number" size="3" value="{{ price.price }}" onblur="updatePrice('{{ price.id }}', 'price')">
+      </th>
+      <th>
+        {% comment %} <input id="input-currency-{{ price.id }}" type="text" size="3" value="{{ price.currency }}" onblur="updatePrice('{{ price.id }}', 'currency')"> {% endcomment %}
+        <select class="form-control" id="input-currency-{{ price.id }}" name="currency" onchange="updatePrice('{{ price.id }}', 'currency')">
+            <option value="">{{ price.currency }}</option>
+            <option value="USD">USD</option>
+            <option value="EUR">EUR</option>
+            <option value="SAR">SAR</option>
+            <option value="No currency">No currency</option>
+        </select>
+      </th>
+      <th>
+        {% comment %} <input id="input-tag-{{ price.id }}" type="text" value="{{ price.tag }}" onblur="updatePrice('{{ price.id }}', 'tag')"> {% endcomment %}
+        <select class="form-control" id="input-tag-{{ price.id }}" name="tag" onchange="updatePrice('{{ price.id }}', 'tag')">
+            <option value="">{{ price.tag }}</option>
+            <option value="manpower">manpower</option>
+            <option value="material">material</option>
+            <option value="machinery">machinery</option>
+            <option value="canon">canon</option>
+            <option value="subcontract">subcontract</option>
+            <option value="other">other</option>
+            <option value="overhead">overhead</option>
+        </select>
+      <th>
+        {% comment %} <input id="input-reference-{{ price.id }}" type="text" value="{{ price.reference }}" onblur="updatePrice('{{ price.id }}', 'reference')"> {% endcomment %}
+        <select class="form-control" id="input-reference-{{ price.id }}" name="reference" onchange="updatePrice('{{ price.id }}', 'reference')">
+          <option value="">{{ price.reference }}</option>
+          <option value="Excavation">Excavation</option>
+          <option value="Concrete">Concrete</option>
+          <option value="Formwork">Formwork</option>
+          <option value="Rebar">Rebar</option>
+          <option value="Active steel bars">Active_rebar</option>
+          <option value="Tunnel Support">Tunnel_support</option>
+          <option value="Slope Support">Slope_support</option>
+          <option value="electrical">Electrical</option>
+          <option value="mechanical">Mechanical</option>
+          <option value="communication">Communication</option>
+          <option value="Safety">Safety</option>
+          <option value="Fire Fighting">Fire_fighting</option>
+          <option value="Security">Security</option>
+          <option value="Tracks">Tracks</option>
+          <option value="Pavement">Pavement</option>
+          <option value="Overhead">Overhead</option>
+      </select>
+      </th>
+      <th width="30px">
+        {{price.project}}
+      </th>
+      <th>
+        {{user}}
+      </th>
+      <th>
+        <form action="{% url 'prices_delete' project_id=project_id pk=price.id %}" method="post">
+            {% csrf_token %}
+          <button type="submit" class="btn btn-danger">Delete</button>
+        </form>
+      </th>
+      
+      {% endfor %}
+    </tr>
+  </tbody>
+</table>
+</div>
+
+
+<div class="container">
+  <form method="post">
+    {% csrf_token %}
+      <div class="mb-3">
+        <label for="code" class="form-label" id="label-code">Code</label>
+        <input type="text" class="form-control" id="code" name="code">
+        <div id="nameHelp" class="form-text">Introduce the code of your price max 20 characters</div>
+      </div>
+      <div class="mb-3">
+        <label for="denomination" class="form-label" id="label-denomination">Denomination</label>
+        <textarea class="form-control" id="denomination" name="denomination"></textarea>
+        <div id="denominationHelp" class="form-text">Introduce all deteails you want to show about your Price</div>
+      </div>
+      <div class="mb-3">
+        <label for="unit" class="form-label" id="label-unit">Unit of measure</label>
+        <input type="text" class="form-control" name="unit" id="unit">
+        <div id="unitHelp" class="form-text">Do not use special character such as % or #.</div>
+      </div>
+      <div class="mb-3">
+        <label for="price" class="form-label" id="label-price">Rate of the price</label>
+        <input type="number" step="0.01" class="form-control" name="price" id="price">
+      </div>
+      <div class="mb-3">
+          <label for="currency" class="form-label" id="label-currency">Currency</label>
+          <select class="form-control" id="currency" name="currency">
+              <option value="">Select a currency</option>
+              <option value="USD">USD</option>
+              <option value="EUR">EUR</option>
+              <option value="SAR">SAR</option>
+              <option value="No currency">No currency</option>
+          </select>
+      </div>
+      <div class="mb-3">
+        <label for="tag" class="form-label" id="label-tag">Tag</label>
+        <select class="form-control" id="tag" name="tag">
+            <option value="">Select a tag</option>
+            <option value="manpower">manpower</option>
+            <option value="material">material</option>
+            <option value="machinery">machinery</option>
+            <option value="canon">canon</option>
+            <option value="subcontract">subcontract</option>
+            <option value="other">other</option>
+            <option value="overhead">overhead</option>
+        </select>
+    </div>
+    <div class="mb-3">
+        <label for="reference" class="form-label" id="label-reference">Reference</label>
+        <select class="form-control" id="reference" name="reference">
+            <option value="">Select a tag</option>
+            <option value="Excavation">Excavation</option>
+            <option value="Concrete">Concrete</option>
+            <option value="Formwork">Formwork</option>
+            <option value="Rebar">Rebar</option>
+            <option value="Active steel bars">Active_rebar</option>
+            <option value="Tunnel Support">Tunnel_support</option>
+            <option value="Slope Support">Slope_support</option>
+            <option value="electrical">Electrical</option>
+            <option value="mechanical">Mechanical</option>
+            <option value="communication">Communication</option>
+            <option value="Safety">Safety</option>
+            <option value="Fire Fighting">Fire_fighting</option>
+            <option value="Security">Security</option>
+            <option value="Tracks">Tracks</option>
+            <option value="Pavement">Pavement</option>
+            <option value="Overhead">Overhead</option>
+        </select>
+    </div>
+    <input type="hidden" name="project" value="{{ project.id }}">
+    <input type="hidden" name="users" value="{{ user }}">
+      <br>
+      <button type="submit" class="btn btn-primary">Create Price</button>
+    </form>
+  </div>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.7.1/jquery.min.js"></script>
+  <script>
+      function updatePrice(priceId, fieldName){
+        const input = document.getElementById(`input-${fieldName}-${priceId}`);
+        const value = input.value;
+        
+        updateDatabase(priceId, fieldName, value);
+      };
+
+      function updateDatabase(priceId, fieldName, value){
+        const url = `/updateprice/`;
+        const data = {
+          'price_id': priceId,
+          'field_name': fieldName,
+          'value': value,
+        };
+        
+        const headers = {
+          'Content-Type': 'application/json',
+          'X-CSRFToken': getCookie('csrftoken')
+        };
+        fetch(url, {
+          method: 'POST',
+          headers: headers,
+          body: JSON.stringify(data)
+        })
+        .then(response => response.json())
+        .then(data => {
+          console.log(data.message);
+          })
+        .catch(error => {
+          console.error('Error:', error);
+          });
+
+          console.log("data:", data);
+      };
+
+      function getCookie(name) {
+        let cookieValue = null;
+        if (document.cookie && document.cookie !== '') {
+          const cookies = document.cookie.split(';');
+          for (let i = 0; i < cookies.length; i++) {
+            const cookie = cookies[i].trim();
+            if (cookie.substring(0, name.length + 1) === (name + '=')) {
+              cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+              break;
+            }
+          }
+        }
+        return cookieValue;
+      }
+  
+    </script>
+
+
+
+{% endblock %}
+

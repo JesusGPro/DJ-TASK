@@ -1,0 +1,96 @@
+{% extends 'tasks/base.html' %}
+{% block content %}
+{% load static %}
+
+<div class="container">
+  <div class="row">
+    <div class="col-md-12">
+      <h2>WorkPackages: {{ project_id }} - {{ project_description }} </h2>
+    </div>
+  </div>
+
+  <div class="container text-center">
+    <div class="row">
+      <div class="col-md-12">
+        <table id="workpackage-list" class="table table-striped">
+          <thead>
+            <tr>
+              <th>Level</th>
+              <th>Description</th>
+              <th>Parent</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for wp in wps %}
+            <tr>
+              <td>
+                <input type="text" value="{{ wp.name }}" class="form-control" id="wp-name-{{ wp.pk }}" onblur="updateWorkpackageField({{ wp.pk }}, 'name', this.value)">
+              </td>
+              <td>
+                <input type="text" value="{{ wp.description }}" class="form-control" id="wp-description-{{ wp.pk }}" onblur="updateWorkpackageField({{ wp.pk }}, 'description', this.value)">
+              </td>
+              <td>
+                {% comment %} <input type="text" value="{{ wp.parent }}" class="form-control" id="wp-parent-{{ wp.pk }}" onblur="updateWorkpackageField({{ wp.pk }}, 'parent', this.value)"> {% endcomment %}
+                <select class="form-control" id="wp-parent-{{ wp.pk }}" onblur="updateWorkpackageField({{ wp.pk }}, 'parent', this.value)">
+                  <option value="{{ wp.parent }}" selected>{{ wp.parent }}</option>
+                  <option value="">-- First Level, no parent --</option>
+                  {% for wp in wps %}                  
+                      <option value="{{ wp.parent }}">
+                          {{ wp.name }}
+                      </option>
+                  {% endfor %}
+                </select>
+                
+              </td>
+              <td>
+                <form method="post">
+                  {% csrf_token %}
+                  <a href="{% url 'workpackage_delete' wp.pk %}" class="btn btn-danger">Delete</a>
+                </form>
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+  
+  
+
+  <form method="post">
+    {% csrf_token %}
+    <div class="mb-3">
+      <label for="name" class="form-label">Level</label>
+      <input type="text" class="form-control" id="name" name="name">
+      <div id="emailHelp" class="form-text">Introduce a int number with the same figures that the total number of levels, for example: 10000</div>
+    </div>
+    <div class="mb-3">
+      <label for="description" class="form-label">Description</label>
+      <input type="text" class="form-control" id="description"  name="description">
+      <div id="emailHelp" class="form-text">Here you can introduce as you want it to be seen, for example: WP 1.1: Global Project Management</div>
+    </div>
+    <div class="mb-3">
+      <label for="parent" class="form-label">Parent</label>
+      <select id="select" class="form-control" name="parent">
+        <option value="">-- Select a Work Package --</option>
+        <option value="">-- First Level, no parent --</option>
+        {% for wp in wps %}
+        <option value="{{ wp.pk }}">{{ wp.name }} - {{ wp.description }} - {{ wp.parent }}</option>
+        {% endfor %}
+      </select>
+    </div>
+    <div class="mb-3">
+      <button type="submit" class="btn btn-primary" id="add-wp">Add WorkPackage</button>
+    </div>
+  </form>
+</div>
+          
+<!-- JavaScript section -->
+<script src="{% static 'js/workpackages.js' %}"></script>
+
+{% endblock %}
+
+
+

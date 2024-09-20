@@ -1,0 +1,212 @@
+{% extends 'tasks/base.html' %}
+{% load multiply %}
+
+{% block content %}
+<h1>Edit Task Selection Quantity</h1>
+<script>
+  function formatQuantityValue(value) {
+    return value.toLocaleString('en-US', {
+        minimumFractionDigits: 3,
+        maximumFractionDigits: 3
+    });
+  }
+  function saveQuantity(quantityId, fieldName, value){
+    const inputId = '#input-' + fieldName + '-' + quantityId;
+    const inputElement = document.querySelector(inputId);
+    if (!inputElement) {
+      console.error(`Error: Input element not found for ${inputId}`);
+      return;
+    }
+    const newValue = inputElement.value; // output the value of the field updated
+
+    const nr = document.querySelector(`#input-nr-${quantityId}`).value;
+    const width = document.querySelector(`#input-width-${quantityId}`).value;
+    const height = document.querySelector(`#input-height-${quantityId}`).value;
+    const length = document.querySelector(`#input-length-${quantityId}`).value;
+
+    // line below is the partial sum
+    const newQuantityValue  = nr * width * height * length;
+
+    // Update the data-quantity attribute with the new partial sum
+    const quantityElement = document.querySelector(`#quantity-${quantityId}`);
+    quantityElement.setAttribute('data-quantity', newQuantityValue);
+    // Update the text content of the quantity element
+    quantityElement.textContent = formatQuantityValue(newQuantityValue);
+    
+    
+    updateDatabase(quantityId, fieldName, newValue, newQuantityValue);
+    }
+
+    function updateTotalQuantity() {
+      let totalQuantity = 0;
+      console.log("The button has been clicked")
+      $('#row-container tr:not("#total-row-0")').each(function() {
+        let quantityCell = $(this).find('th[id^="quantity-"]');
+        let quantityString = quantityCell.text().replace(/,/g, '').trim();
+        let quantityFloat = parseFloat(quantityString, 10);
+        let formattedQuantity = parseFloat(quantityFloat.toFixed(3));
+        if (!isNaN(formattedQuantity)) {
+          totalQuantity += formattedQuantity;
+        } else {
+          console.log("Error: quantityFloat is NaN");
+        }
+      });
+      $('#total-quantity-0').html(`<b>${totalQuantity.toLocaleString('en-US', { minimumFractionDigits: 3 })}</b>`);
+      return totalQuantity;
+    
+    }
+
+    function updateDatabase(quantityId, fieldName, newValue, newQuantityValue) {
+    const totalQuantity = updateTotalQuantity();
+    console.log(totalQuantity);
+
+    const currentUrl = window.location.href;
+    const taskId = currentUrl.match(/task_selection\/(\d+)\/edit_quantity/)[1];
+    const url = `/update_database/${taskId}/`; 
+
+    const data = {
+      'id': quantityId,
+      'field_name': fieldName,
+      'value': newValue,
+      'quantity_value': newQuantityValue,
+      'grand_total': totalQuantity,
+    };
+    console.log("This is the data sent: ", data)
+    // If the field name is 'notes', retrieve the textarea value and trim it
+    if (newValue.notes) {
+      const notesTextarea = document.getElementById(`input-notes-${id}`);
+      data.value = notesTextarea.value.trim();
+    };
+  
+    // Set the request headers and method
+    const headers = {
+      'Content-Type': 'application/json',
+      'X-CSRFToken': getCookie('csrftoken') // Assuming you're using Django's CSRF protection
+    };
+    
+    // Make the POST request to the Django view
+    fetch(url, {
+      method: 'POST',
+      headers: headers,
+      body: JSON.stringify(data)
+    })
+    .then(response => response.json())
+    .then(data => {
+      console.log(data.message);
+      updateTotalQuantity();
+    })
+    .catch(error => {
+      console.error('Error:', error);
+      alert('Error: ' + error.message);
+      }
+    );
+    }
+  // Helper function to get the CSRF token from the cookie
+  function getCookie(name) {
+    let cookieValue = null;
+    if (document.cookie && document.cookie !== '') {
+      const cookies = document.cookie.split(';');
+      for (let i = 0; i < cookies.length; i++) {
+        const cookie = cookies[i].trim();
+        if (cookie.substring(0, name.length + 1) === (name + '=')) {
+          cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+          break;
+        }
+      }
+    }
+    return cookieValue;
+  }
+
+  // yellow background in the form
+  $(document).ready(function(){
+  const formInputs = document.querySelectorAll('input');
+    formInputs.forEach(input => {
+      input.addEventListener('focus', () => {
+        input.style.backgroundColor = '#fef9e7';
+      });
+      input.addEventListener('blur', () => {
+        input.style.backgroundColor = 'white';
+      });
+    });
+  });
+
+  $(document).ready(function() {
+    if ($('#triggering-updateTotalQuantity').val() === 'true') {
+      updateTotalQuantity(); // call the function here
+    }
+  });
+
+</script>
+
+<table class="table table-bordered table-striped">
+  <thead class="thead-dark">
+    <tr>
+      <th>id</th>
+      <th>Denomination</th>
+      <th>Nr</th>
+      <th>Width</th>
+      <th>Length</th>
+      <th>Height</th>
+      <th>Quantity</th>
+      <th>Notes</th>
+    </tr>
+  </thead>
+  <tbody id="row-container">
+    {% for quantity in quantities %}
+    <tr id="row-{{ forloop.counter }}">
+      <th>
+        {{ quantity.id }}
+      </th>
+      <th>
+        <input id="input-denomination-{{ quantity.id }}" type="text" value="{{ quantity.denomination }}" onBlur="saveQuantity('{{ quantity.id }}', 'denomination', '{{ quantity.denomination }}')">
+      </th>
+      <th>
+        <input id="input-nr-{{ quantity.id }}" type="number" value="{{ quantity.nr }}" onBlur="saveQuantity('{{ quantity.id }}', 'nr', '{{ quantity.nr }}')">
+      </th>
+      <th>
+        <input id="input-width-{{ quantity.id }}" type="number" value="{{ quantity.width }}" onBlur="saveQuantity('{{ quantity.id }}', 'width', '{{ quantity.width }}')">
+      </th>
+      <th>
+        <input id="input-length-{{ quantity.id }}" type="number" value="{{ quantity.length }}" onBlur="saveQuantity('{{ quantity.id }}', 'length', '{{ quantity.length }}')">
+      </th>
+      <th>
+        <input id="input-height-{{ quantity.id }}" type="number" value="{{ quantity.height }}" onBlur="saveQuantity('{{ quantity.id }}', 'height', '{{ quantity.height }}')">
+      </th>
+      <th id="quantity-{{ quantity.id }}" data-quantity={% multiply quantity.nr  quantity.width  quantity.height  quantity.length %}>
+        {% multiply quantity.nr  quantity.width  quantity.height  quantity.length %}
+      </th>
+      <th>
+        <input id="input-notes-{{ quantity.id }}" type="text" value="{{ quantity.notes }}" onBlur="saveQuantity('{{ quantity.id }}', 'notes', '{{ quantity.notes }}')">
+      </th>
+      <th>
+      <button type="submit" class="btn btn-danger" onclick="location.href='{% url 'delete_quantity' quantity.pk %}'">Delete</button>
+      </th>
+      
+      {% endfor %}
+    </tr>
+    <tr id="total-row-0">
+      <td colspan="6"> <h5>Total: {{ task_selection }}</h5></td>
+      <td id="total-quantity-0"></td>
+    </tr>
+  </tbody>
+</table>
+<form method="post">
+  {% csrf_token %}
+  <div style="display: flex; flex-wrap: nowrap;" id="new-rows">
+    <h5 style="margin: 0; white-space: nowrap;">New line--</h5>
+    <input type="hidden" name="task" value="{{ pk }}" class="form-control">
+    <input type="text" name="denomination" value="" class="form-control">
+    <input type="number" step="0.001" name="nr" value="1" class="form-control">
+    <input type="number" step="0.001" name="width" value="1" class="form-control">
+    <input type="number" step="0.001" name="length" value="1" class="form-control">
+    <input type="number" step="0.001" name="height" value="1" class="form-control">
+    <input type="hidden" name="quantity" value="0" class="form-control">
+    <input type="text" name="notes" value="" placeholder="Notes here" class="form-control">
+    <input type="hidden" id="triggering-updateTotalQuantity" name="form_submitted" value="true">
+    <button type="submit" class="btn btn-primary" id="add-button">Add</button>
+  </div>
+  <a href="{% url 'task_selection' selected_drawer_id %}" class="btn btn-success">Back to Task Selection</a>
+</form>
+
+
+{% endblock %}

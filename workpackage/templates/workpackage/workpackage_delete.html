@@ -1,0 +1,14 @@
+{% extends 'tasks/base.html' %}
+{% block content %}
+
+<div class="container">
+    <h1>Delete WorkPackage</h1>
+    <p>Are you sure you want to delete the Work Package "{{ wp.name }} : {{ wp.description }}"?</p>
+    <form method="post">
+      {% csrf_token %}
+      <button type="submit" class="btn btn-danger">Delete</button>
+      <a href="{% url 'workpackage_create' %}" class="btn btn-secondary">Cancel</a>
+    </form>
+  </div>
+
+  {% endblock %}

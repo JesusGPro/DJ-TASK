@@ -1,0 +1,14 @@
+{% extends 'tasks/base.html' %}
+{% block content %}
+
+<div class="container">
+    <h1>Delete WorkPackage</h1>
+    <p>Are you sure you want to delete this work "{{ task_obj.code }} : {{ task_obj.name }} -- WorkPackage: {{workpackage_obj.description}}"?</p>
+    <form method="post">
+      {% csrf_token %}
+      <button type="submit" class="btn btn-danger">Delete</button>
+      <a href="{% url 'budget_create' work.work_package_id %}" class="btn btn-secondary">Cancel</a>
+    </form>
+  </div>
+
+  {% endblock %}

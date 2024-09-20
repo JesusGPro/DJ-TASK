@@ -1,0 +1,132 @@
+{% extends 'tasks/base.html' %}
+{% block content %}
+{% load static %}
+
+<div class="container">
+    <h1>WorkPackage</h1>
+    <p>Breakdown of the work quantity for:</p> 
+    <p>WorkPackage id: {{ workpackage_obj.id }} -- WorkPackage description: {{workpackage_obj.description}}</p>
+    <p>Work id: {{ pk }}</p>
+    <div class="container text-center">
+        <div class="row">
+          <div class="col-md-12">
+            <table id="workpackage-list" class="table table-striped">
+              <thead>
+                <tr>
+                  <th>Task code</th>
+                  <th>Task name</th>
+                  <th>Unit</th>
+                  <th>Price</th>
+                  <th>Quantity</th>
+                  <th>Amount</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td>
+                    <input size="20" type="text" value="{{ task.code }}" class="form-control" id="tasks-code-{{ tasks_retrieved.id }}" readonly>
+                  </td>
+                  <td>
+                    <input size="125" type="text" value="{{ task.name }}" class="form-control" id="tasks-name-{{ tasks_retrieved.id }}" readonly>
+                  </td>
+                  <td>
+                    <input size="10" type="text" value="{{ task.unit }}" class="form-control" id="tasks-unit-{{ tasks_retrieved.id }}" readonly>
+                  </td>
+                  <td>
+                    <input type="text" value="{{ task.price }}" class="form-control" id="tasks-price-{{ tasks_retrieved.id }}" readonly>
+                  </td>
+                  <td>
+                    <input type="text" value="{{ work.quantity }}" class="form-control" id="work-quantity-{{ work.id }}" onblur="updateQuantity({{ work.id }}, 'quantity', this.value, {{ task.price }})">
+                  </td>
+                  <td>
+                    <input type="text" value="{{ work.work_amount }}" class="form-control" id="work-amount-{{ work.id }}" readonly>
+                  </td>
+                </tr>
+             
+              </tbody>
+            </table>
+          </div>
+        </div>
+    </div>    
+
+</div>
+
+<!-- Introducing lines of measurements -->
+
+<div class="container">
+  <h2>Measurements</h2>
+  <table class="table table-striped">
+      <thead>
+          <tr>
+              <th>Description</th>
+              <th>Nr</th>
+              <th>Width</th>
+              <th>Length</th>
+              <th>Height</th>
+              <th>Partial</th>
+              <th>Comment</th>
+              
+          </tr>
+      </thead>
+      <tbody>
+          {% for measurement in measurements %}
+              <tr>
+                  <td><input class="form-control" type="text" id="input-description-{{ measurement.id }}" value="{{ measurement.description }}" onblur="updateMeasurement({{ measurement.id }}, 'description', this.value)"></td>
+                  <td><input class="form-control" type="number" id="input-nr-{{ measurement.id }}" value="{{ measurement.nr }}" onblur="updateMeasurement({{ measurement.id }}, 'nr', this.value)"></td>
+                  <td><input class="form-control" type="text" id="input-width-{{ measurement.id }}" value="{{ measurement.width }}" step="0.001" onblur="updateMeasurement({{ measurement.id }}, 'width', this.value)"></td>
+                  <td><input class="form-control" type="text" id="input-length-{{ measurement.id }}" value="{{ measurement.length }}" step="0.001" onblur="updateMeasurement({{ measurement.id }}, 'length', this.value)"></td>
+                  <td><input class="form-control" type="text" id="input-height-{{ measurement.id }}" value="{{ measurement.height }}" step="0.001" onblur="updateMeasurement({{ measurement.id }}, 'height', this.value)"></td>
+                  <td id="partial-{{ measurement.id }}">{{ measurement.partial }}</td>
+                  <td><input class="form-control" type="text" id="input-comment-{{ measurement.id }}" value="{{ measurement.comment }}" onblur="updateMeasurement({{ measurement.id }}, 'comment', this.value)"></td>
+                  <td>
+                    <form method="post">
+                      {% csrf_token %}
+                      <a href="{% url 'measurement_delete' workpackage_obj.id work.id measurement.id %}" class="btn btn-danger">Delete</a>
+                    </form>
+                  </td>
+              </tr>
+          {% endfor %}
+          <tr>
+            <td colspan="5">Grand Total: </td>
+            <td id="grand-total">{{ grand_total }}</td>
+          </tr>
+      </tbody>
+  </table>
+
+  <table class="table table-striped">
+    <thead>
+        <tr>
+            <th>Description</th>
+            <th>Nr</th>
+            <th>Width</th>
+            <th>Length</th>
+            <th>Height</th>
+            <th>Partial</th>
+            <th>Comment</th>
+        </tr>
+    </thead>
+    <tbody>
+      <form method="post">
+        {% csrf_token %}
+        <tr>
+        <input type="hidden" id="work_id" value="{{ pk }}">
+        <th><input class="form-control" type="text" id="description" name="description"></th>
+        <th><input class="form-control" type="number" id="nr" name="nr" ></th>
+        <th><input class="form-control" type="text" id="width" name="width" step="0.001"></th>
+        <th><input class="form-control" type="text" id="length" name="length" step="0.001"></th>
+        <th><input class="form-control" type="text" id="height" name="height" step="0.001"></th>
+        <th><input class="form-control" type="text" id="partial" step="0.001" readonly></th>
+        <th><input class="form-control" type="text" id="comment" name="comment"></th>
+        </tr>
+        <tr>
+          <th><button type="submit" class="btn btn-primary">Create a measurement line</button>
+        </tr>
+      </form>
+    </tbody>
+  </table>
+</div>
+
+
+<script src="{% static 'js/budget_edit.js' %}"></script>
+
+{% endblock %}
