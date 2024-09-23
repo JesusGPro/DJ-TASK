@@ -1,9 +1,11 @@
 {% extends 'tasks/base.html' %}
 {% block content %}
 {% load tags %}
+{% load static %}
 
 <div class="container">
     <h1>Task Detail, project id: {{project_id}}</h1>
+    <p>Task name: {{ task.name }}</p>
     <table class="table table-bordered table-striped">
         <thead class="thead-dark">
           <tr>
@@ -22,8 +24,8 @@
         <tbody>
           <tr>
             <td>{{ task.id }}</td>
-            <td width="150px">{{ task.code }}</td>
-            <td width="350px">{{ task.name }}</td>
+            <td width="100px">{{ task.code }}</td>
+            <td width="400px"><input class="form-control" type="text" id="input-task_name" size="40" value="{{ task.name }}" onblur="updateTaskName({{ task.id }}, 'name', this.value)"></td>
             <td width="100px">{{ task.unit }}</td>
             <td></td>
             <td></td>
@@ -33,12 +35,14 @@
             <td>{{ task.project }}</td>
             <td></td>
           </tr>
+          
         </tbody>
+        <br>
         <tbody>
           <tr>
             <th>Id</th>
             <th>Code</th>
-            <th>Task Name</th>
+            <th>Component Name</th>
             <th>Unit</th>
             <th>Quantity</th>
             <th>Price</th>
@@ -99,6 +103,7 @@
             <tr>
               <td>
                 <select id="component-select" class="form-control" name="code">
+                  <option value=" ">-- Choose a Component --</option>
                   {% for price in prices %}
                     <option value="{{ price.code }}">{{price.id}}-{{ price.code }} - {{ price.denomination }} - {{ price.unit }} - {{price.price}} - {{ price.currency }} - {{price.tag}}</option>
                     <p>Price code: {{ price.id }} </p>
@@ -123,96 +128,6 @@
 
 
 
-{% comment %} <script>
-  function getTaskCurrency(callback) {
-    document.addEventListener("DOMContentLoaded", function() {
-      var taskCurrency = document.getElementById('task-currency').innerHTML;
-      callback(taskCurrency);
-    });
-  }
-
-  function getPriceFromSelect() {
-    var selectedPriceId = document.getElementById('component-select').value;
-    var priceInfo = selectedPriceId.split(' ');
-    return {
-      price: priceInfo[0],
-      currency: priceInfo[1],
-    };
-  }
-
-  function updateTotalPrice() {
-    var price;
-    var currency;
-    var taskCurrency;
-    var quantity;
-    var totalPrice;
-
-    getTaskCurrency(function(taskCurrencyValue) {
-      taskCurrency = taskCurrencyValue;
-
-      document.getElementById('component-select').addEventListener('change', function() {
-        var priceInfo = getPriceFromSelect();
-        price = priceInfo.price;
-        currency = priceInfo.currency;
-
-        quantity = document.getElementById('quantity-input').value;
-
-        if (currency !== taskCurrency) {
-          // Load the currency_rates.json file using XMLHttpRequest
-          var xhr = new XMLHttpRequest();
-          xhr.open('GET', '../../../../../currency_rates.json', true);
-          xhr.onload = function() {
-            if (xhr.status === 200) {
-              var conversionRates = JSON.parse(xhr.responseText);
-              var conversionRate = conversionRates[currency + '_' + taskCurrency];
-
-              price = price * conversionRate;
-              totalPrice = price * quantity;
-
-              // Update the price with the converted value
-              document.getElementById('total-price').value = totalPrice.toFixed(2);
-            }
-          };
-          xhr.send();
-        } else {
-          totalPrice = price * quantity;
-          document.getElementById('total-price').value = totalPrice.toFixed(2);
-        }
-      });
-
-      document.getElementById('quantity-input').addEventListener('blur', function() {
-        quantity = this.value;
-        var priceInfo = getPriceFromSelect();
-        price = priceInfo.price;
-        currency = priceInfo.currency;
-        
-        if (currency !== taskCurrency) {
-          // Load the currency_rates.json file using XMLHttpRequest
-          var xhr = new XMLHttpRequest();
-          xhr.open('GET', '../../../../../currency_rates.json', true);
-          xhr.onload = function() {
-            if (xhr.status === 200) {
-              var conversionRates = JSON.parse(xhr.responseText);
-              var conversionRate = conversionRates[currency + '_' + taskCurrency];
-
-              price = price * conversionRate;
-              totalPrice = price * quantity;
-
-              // Update the price with the converted value
-              document.getElementById('total-price').value = totalPrice.toFixed(2);
-            }
-          };
-          xhr.send();
-        } else {
-          totalPrice = price * quantity;
-          document.getElementById('total-price').value = totalPrice.toFixed(2);
-        }
-      });
-    });
-  }
-  
-  // Call updateTotalPrice() to set up the event listeners
-  updateTotalPrice();
-</script> {% endcomment %}
+<script src="{% static 'js/task_update.js' %}"></script>
 
 {% endblock %}

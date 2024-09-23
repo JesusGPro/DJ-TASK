@@ -63,6 +63,20 @@
       </div>
     </div>    
     
+    <table class="table table-striped">
+      <tr>
+        <th></th>
+        <th></th>
+        <th>Grand total for workpackage:  {{ work_package_description }}</th>
+        <th></th>
+        <th>{{ formatted_grand_total }}</th>
+        <th></th>
+        <th></th>
+        <th></th>
+
+      </tr>
+    </table>
+
     <form method="post">
       {% csrf_token %}
       <table class="table table-bordered">

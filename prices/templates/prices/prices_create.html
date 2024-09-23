@@ -25,16 +25,16 @@
         {{ price.id }}
       </th>
       <th>
-        <input id="input-code-{{ price.id }}" type="text" size="15" value="{{ price.code }}" onblur="updatePrice('{{ price.id }}', 'code')">
+        <input class="form-control" id="input-code-{{ price.id }}" type="text" size="15" value="{{ price.code }}" onblur="updatePrice('{{ price.id }}', 'code')">
       </th>
       <th>
-        <input id="input-denomination-{{ price.id }}" type="text" size="20" value="{{ price.denomination }}" onblur="updatePrice('{{ price.id }}', 'denomination')">
+        <input class="form-control" id="input-denomination-{{ price.id }}" type="text" size="20" value="{{ price.denomination }}" onblur="updatePrice('{{ price.id }}', 'denomination')">
       </th>
       <th>
-        <input id="input-unit-{{ price.id }}" type="text" size="3" value="{{ price.unit }}" onblur="updatePrice('{{ price.id }}', 'unit')">
+        <input class="form-control" id="input-unit-{{ price.id }}" type="text" size="3" value="{{ price.unit }}" onblur="updatePrice('{{ price.id }}', 'unit')">
       </th>
       <th>
-        <input id="input-price-{{ price.id }}" type="number" size="3" value="{{ price.price }}" onblur="updatePrice('{{ price.id }}', 'price')">
+        <input class="form-control" id="input-price-{{ price.id }}" type="number" size="3" value="{{ price.price }}" onblur="updatePrice('{{ price.id }}', 'price')">
       </th>
       <th>
         {% comment %} <input id="input-currency-{{ price.id }}" type="text" size="3" value="{{ price.currency }}" onblur="updatePrice('{{ price.id }}', 'currency')"> {% endcomment %}

@@ -119,7 +119,8 @@
         <th><input class="form-control" type="text" id="comment" name="comment"></th>
         </tr>
         <tr>
-          <th><button type="submit" class="btn btn-primary">Create a measurement line</button>
+          <th><button type="submit" class="btn btn-primary">Create a measurement line</button></th>
+          <th><a href="{% url 'budget_create' workpackage_obj.id %}" class="btn btn-secondary">Get back to work creation</a></th>
         </tr>
       </form>
     </tbody>

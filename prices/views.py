@@ -129,7 +129,6 @@ def tasks_detail(request, pk, project_id):
             price_denomination = price_obj.denomination
             price_unit = price_obj.unit
             price_currency = price_obj.currency
-            print("price before: ", price_number)
             # Checking the currencys
             if task_currency != price_currency:
                 if task_currency == "USD" and price_currency == "SAR":
@@ -151,8 +150,6 @@ def tasks_detail(request, pk, project_id):
                     rate = Decimal(currency_instance.eur_sar)
                     price_number = round(price_number * rate, 2)
 
-            print("price after: ", price_number)
-
         quantities.append(quantity)
         denominations.append(price_denomination)
         units.append(price_unit)
@@ -170,7 +167,14 @@ def tasks_detail(request, pk, project_id):
 
 
     
-    return render(request, 'prices/tasks_detail.html', {'task': task, 'project_id': project_id, 'prices': prices, 'components': components, 'zipped_data': zipped_data, 'grand_total': grand_total})
+    return render(request, 'prices/tasks_detail.html', {
+        'task': task, 
+        'project_id': project_id, 
+        'prices': prices, 
+        'components': components, 
+        'zipped_data': zipped_data, 
+        'grand_total': grand_total
+        })
 
 def tasks_add_component(request, project_id, pk):
     task = get_object_or_404(Task, pk=pk)    
@@ -198,3 +202,15 @@ def tasks_comp_delete(request, pk, comp_id, project_id):
         messages.success(request, f"Task created successfully.")
         return redirect('tasks_detail', project_id=project_id, pk=pk)
     return render(request, 'prices/task_delete.html', {'comp': comp, 'pk': comp_id})
+
+def task_name_update(request):
+    if request.method == 'POST':
+        data = json.loads(request.body)
+        task_id = data['id']
+        task_name_value = data['value']
+        task_obj = Task.objects.get(id=task_id)
+        task_obj.name = task_name_value
+        task_obj.save()
+        messages.success(request, 'Task name updated successfully!')
+        return JsonResponse({'message': 'Task name updated successfully!'})
+    return JsonResponse({'message': 'Invalid request in updateTaskName'})

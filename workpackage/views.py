@@ -2,7 +2,7 @@ from django.shortcuts import render, redirect
 from django.urls import reverse
 from django.contrib import messages
 from django.forms import ModelForm
-from .models import WorkPackage, WorkLevel, Work, Measurement
+from .models import WorkPackage, WorkLevel, Work, Measurement, WorkpackageTotals
 from .forms import WorkLevelForm, WorkPackageForm, WorkForm, WPIdForm, MeasurementForm
 from tasks.models import ActiveProject, Project
 from prices.models import Task
@@ -46,19 +46,40 @@ def budget_create(request, work_package_id):
 
     # Sending elements to the list
     works = Work.objects.filter(work_package = work_package_id).select_related('task')
-    # print("works with wp id selected", Work.objects.filter(work_package = work_package_id))
     task_ids = list(Work.objects.filter(work_package = work_package_id).values_list('task_id', flat=False))
     task_ids = [task_id[0] for task_id in task_ids]
-    
     tasks_retrieved = sorted(Task.objects.filter(id__in=task_ids), key=lambda x: task_ids.index(x.id))
-    # print(task_ids)
-    # print(tasks_retrieved)
-
     zips = list(zip(works, tasks_retrieved))
+
+    # calculating the grand total of the chapter:   
+    quantities_list = []
+    for q in works:
+        quantities_list.append(q.quantity)
     
+    prices_list = []
+    for p in task_ids:
+        price = Task.objects.get(id=p).price
+        prices_list.append(price)
+    
+    grand_total = 0
+    for i in range(0, len(quantities_list)):
+        grand_total += quantities_list[i] * prices_list[i]
+
+    # Storing in the data base, first check if it exist, if exists only update
+    wp_budget =WorkpackageTotals(total=grand_total, workpackage_id=work_package_id)
+    if WorkpackageTotals.objects.filter(workpackage_id=work_package_id).exists():
+        existing_wp_budget = WorkpackageTotals.objects.get(workpackage_id=work_package_id)
+        existing_wp_budget.total = grand_total
+        existing_wp_budget.save()
+    else:
+        wp_budget.save()
+
+    formatted_grand_total = "{:,.2f}".format(grand_total)
+
 
     if request.method == 'POST':
         form = WorkForm(request.POST)
+        print(form.errors)
         if form.is_valid():
             task = form.cleaned_data['task']
             task_id = task.id
@@ -77,9 +98,9 @@ def budget_create(request, work_package_id):
             budget.save()
             messages.success(request, 'Work created successfully!')
             return redirect(reverse('budget_create', args=[work_package_id]))
-    else:
-        messages.error(request, 'Work could not be created.')
-        form = WorkForm()
+        else:
+            messages.error(request, 'Work could not be created.')
+            form = WorkForm()
 
     return render(request, 'workpackage/budget_create.html', {
         'project_id': project_id,
@@ -91,7 +112,8 @@ def budget_create(request, work_package_id):
         'form': form,
         'works': works,
         'tasks_retrieved': tasks_retrieved,
-        'zips': zips
+        'zips': zips,
+        'formatted_grand_total':  formatted_grand_total
     })
     
 def get_task_details(request, task_id):
@@ -111,10 +133,39 @@ def budget_delete(request, work_package_id, pk):
 
     if request.method == 'POST':
         work.delete()
-        messages.success(request, 'Work Package deleted successfully!')
+        messages.success(request, 'Work deleted successfully!')
+
+        
+        # Updating budget in the database
+        works = Work.objects.filter(work_package = work_package_id).select_related('task')
+        task_ids = list(Work.objects.filter(work_package = work_package_id).values_list('task_id', flat=False))
+        task_ids = [task_id[0] for task_id in task_ids]       
+
+        # calculating the grand total of the chapter:   
+        quantities_list = []
+        for q in works:
+            quantities_list.append(q.quantity)
+        
+        prices_list = []
+        for p in task_ids:
+            price = Task.objects.get(id=p).price
+            prices_list.append(price)
+        
+        grand_total = 0
+        for i in range(0, len(quantities_list)):
+            grand_total += quantities_list[i] * prices_list[i]
+
+        # Storing in the data base, first check if it exist, if exists only update
+        wp_budget =WorkpackageTotals(total=grand_total, workpackage_id=work_package_id)
+        if WorkpackageTotals.objects.filter(workpackage_id=work_package_id).exists():
+            existing_wp_budget = WorkpackageTotals.objects.get(workpackage_id=work_package_id)
+            existing_wp_budget.total = grand_total
+            existing_wp_budget.save()
+        else:
+            wp_budget.save()
+
         return redirect(reverse('budget_create', args=[work_package_id]))
-    else:
-        messages.error(request, 'Work could not be erased.')
+    
     return render(request, 'workpackage/budget_delete.html', {'work': work, 'task_obj': task_obj, 'workpackage_obj': workpackage_obj})
 
 
@@ -151,12 +202,18 @@ def budget_edit(request, work_package_id, pk):
     task = Task.objects.get(pk=task_to_edit_id)
     workpackage_obj = WorkPackage.objects.get(pk=work_package_id)
     measurements = Measurement.objects.filter(work=work)
+    print("measurements: ", measurements)
 
-    grand_total = 0
-    for measurement in measurements:
-        grand_total += measurement.partial
-    work.quantity = grand_total
-    work.save()
+    if not measurements.exists():
+        grand_total = Work.objects.get(id=pk).quantity
+        
+    else:
+        grand_total = 0
+
+        for measurement in measurements:
+            grand_total += measurement.partial
+        work.quantity = grand_total
+        work.save()
 
         
     form = MeasurementForm()

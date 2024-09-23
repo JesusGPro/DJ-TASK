@@ -41,3 +41,11 @@ class Measurement(models.Model):
     @property
     def partial(self):
         return round(self.nr * self.width * self.length * self.height, 3)
+    
+
+class WorkpackageTotals(models.Model):
+    workpackage = models.ForeignKey('Workpackage', on_delete=models.CASCADE)
+    total = models.DecimalField(max_digits=30, decimal_places=2)
+
+    def __str__(self):
+        return f"Total for Workpackage {self.workpackage.name}: {self.total}"
