@@ -2,6 +2,8 @@
 {% load static %}
 
 {% block content %}
+
+  
   <div class="container">
     <h4>Project id: {{ project_id }}</h4>
     <h4>Project description: {{ project_description }}</h4>
@@ -76,35 +78,40 @@
 
       </tr>
     </table>
+    <style>
+      .table-layout-fixed {
+        table-layout: fixed;
+      }
+    </style>
 
     <form method="post">
       {% csrf_token %}
-      <table class="table table-bordered">
+      <table class="table table-bordered table-layout-fixed">
         <thead>
           <tr>
-            <th>Task Code</th>
-            <th>Task Name</th>
-            <th>Unit</th>
-            <th>Price</th>
-            <th>Quantity</th>
-            <th>Amount</th>
+            <th class="col-5">Task Code</th>
+            <th class="col-5">Task Name</th>
+            <th class="col-1">Unit</th>
+            <th class="col-1">Price</th>
+            <th class="col-2">Quantity</th>
+            <th class="col-2">Amount</th>
           </tr>
         </thead>
         <tbody>
           <tr>
-            <td>
-              <select name="task" id="task">
+            <td class="col-5">
+              <select name="task" id="task" class="form-control" width="100%">
                 <option value="">-- Select one task --</option>
                 {% for task in tasks %}
                   <option value="{{ task.id }}">{{ task.id }} - {{ task.code }} - {{ task.name }}</option>
                 {% endfor %}
               </select>
             </td>
-            <td id="task_name"></td>
-            <td id="task_unit"></td>
-            <td id="task_price"></td>
-            <td><input type="text" name="quantity" id="quantity" set="0.001"/></td>
-            <td id="amount"></td>
+            <td class="col-5" id="task_name"></td>
+            <td class="col-1" id="task_unit"></td>
+            <td class="col-1" id="task_price"></td>
+            <td class="col-2"><input type="text" class="form-control" name="quantity" id="quantity" set="0.001"/></td>
+            <td class="col-2" id="amount"></td>
           </tr>
         </tbody>
       </table>

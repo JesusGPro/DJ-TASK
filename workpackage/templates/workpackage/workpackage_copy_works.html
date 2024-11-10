@@ -1,0 +1,26 @@
+{% extends 'tasks/base.html' %}
+
+<!-- Define the page title -->
+{% block title %}Copy Work{% endblock %}
+<br>
+<br>
+<!-- Define the page content -->
+{% block content %}
+  <div class="container">
+    <h1>Copy Work</h1>
+    <form method="post">
+      {% csrf_token %}
+      <div class="form-group">
+        <label for="works_to_copy">Works to Copy:</label>
+        {% for work in works %}
+          <input type="checkbox" id="work_{{ work.id }}" name="works_to_copy" value="{{ work.id }}">
+          <label for="work_{{ work.id }}">{{ work.task_name }} x {{ work.quantity }}</label>
+          <br>
+        {% endfor %}
+      </div>
+      <br>
+      <br>
+      <button type="submit" class="btn btn-primary">Copy Task</button>
+    </form>
+  </div>
+{% endblock %}

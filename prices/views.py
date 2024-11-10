@@ -207,10 +207,19 @@ def task_name_update(request):
     if request.method == 'POST':
         data = json.loads(request.body)
         task_id = data['id']
-        task_name_value = data['value']
+        task_field = data['name']
+        task_value = data['value']
+        
         task_obj = Task.objects.get(id=task_id)
-        task_obj.name = task_name_value
+        if task_field == 'name':
+            task_obj.name = task_value
+        elif task_field == 'code':
+            task_obj.code = task_value
+        elif task_field == 'price':
+            task_obj.price = task_value
         task_obj.save()
-        messages.success(request, 'Task name updated successfully!')
-        return JsonResponse({'message': 'Task name updated successfully!'})
+        messages.success(request, 'Task updated successfully!')
+        return JsonResponse({'message': 'Task updated successfully!'})
+    else:
+        messages.error(request, 'Task was not updated')
     return JsonResponse({'message': 'Invalid request in updateTaskName'})

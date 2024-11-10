@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Work Package Measurement Report</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous">
+</head>
+<body>
+
+  <div class="container">
+    <div class="text-center my-4">
+      <h4>Project Description: {{ project_description }}</h4>
+      <h5>Grand Total: {{ report.formatted_grand_total }}</h5>
+    </div>
+
+    {% for report in reports %}
+      <table class="table table-striped">
+        <thead>
+          <tr>
+            {% comment %} <th>Work Package ID</th>
+            <th>Work Package Name</th> {% endcomment %}
+            <th>Work Package Description</th>
+            <th>Grand Total</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            {% comment %} <td>{{ report.work_package_id }}</td>
+            <td>{{ report.work_package_name }}</td> {% endcomment %}
+            <td>{{ report.work_package_description }}</td>
+            <td style="text-align: right;">{{ report.formatted_grand_total }}</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <h5 class="mt-4">Tasks and Measurements</h5>
+      <table class="table table-striped">
+        <thead>
+          <tr>
+            <th>Task Code</th>
+            <th>Task Name</th>
+            <th>Unit</th>
+            <th>Price</th>
+            <th>Quantity</th>
+            <th>Amount</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for work, task in report.zips %}
+          <tr>
+            <td>{{ task.code }}</td>
+            <td>{{ task.name }}</td>
+            <td>{{ task.unit }}</td>
+            <td>{{ task.price }}</td>
+            <td>{{ work.quantity }}</td>
+            <td>{{ work.work_amount }}</td>
+          </tr>
+          <tr>
+            <td colspan="6">
+              <table class="table table-striped">
+                <thead>
+                  <tr>
+                    <th>Description</th>
+                    <th>Nr</th>
+                    <th>Width</th>
+                    <th>Length</th>
+                    <th>Height</th>
+                    <th>Partial</th>
+                    <th>Comment</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {% for measurement in report.measurements %}
+                    {% for measurement_detail in measurement.measurements %}
+                    <tr>
+                      <td>{{ measurement_detail.description }}</td>
+                      <td>{{ measurement_detail.nr }}</td>
+                      <td>{{ measurement_detail.width }}</td>
+                      <td>{{ measurement_detail.length }}</td>
+                      <td>{{ measurement_detail.height }}</td>
+                      <td>{{ measurement_detail.partial }}</td>
+                      <td>{{ measurement_detail.comment }}</td>
+                    </tr>
+                    {% endfor %}
+                  {% endfor %}
+                </tbody>
+              </table>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    {% endfor %}
+  </div>
+</body>
+</html>

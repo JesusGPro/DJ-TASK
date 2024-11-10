@@ -9,6 +9,8 @@ urlpatterns = [
     path('', include('tasks.urls')), 
     path('', include('prices.urls')),
     path('', include('workpackage.urls')),
+    path('', include('reports.urls')),
+    path('', include('login_budget.urls')),
     # path('workpackages.js', serve, {'document_root': settings.STATIC_ROOT, 'path': 'js/workpackages.js'}),
 ] 
 

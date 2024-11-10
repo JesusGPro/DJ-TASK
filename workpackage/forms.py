@@ -1,5 +1,6 @@
 from django import forms
 from .models import WorkLevel, WorkPackage, Work, Measurement
+from prices.models import Task
 from django.forms import ModelForm
 from django.forms import formset_factory
 from django.core.exceptions import ValidationError
@@ -34,3 +35,20 @@ class MeasurementForm(forms.ModelForm):
         fields = ('description', 'nr', 'width', 'length', 'height', 'comment')
 
 
+class CopyWorkPackageForm(forms.Form):
+    source_workpackage = forms.ChoiceField()
+    destination_workpackage = forms.ChoiceField()
+
+    def __init__(self, *args, **kwargs):
+        super(CopyWorkPackageForm, self).__init__(*args, **kwargs)
+        self.fields['source_workpackage'].choices = [(wp.id, wp.name) for wp in WorkPackage.objects.all()]
+        self.fields['destination_workpackage'].choices = [(wp.id, wp.name) for wp in WorkPackage.objects.all()]
+
+
+class CopyWorkForm(forms.Form):
+    works_to_copy = forms.MultipleChoiceField(widget=forms.CheckboxSelectMultiple)
+
+    def __init__(self, source_workpackage_id, *args, **kwargs):
+        super(CopyWorkForm, self).__init__(*args, **kwargs)
+        works = Work.objects.filter(work_package_id=source_workpackage_id)
+        self.fields['works_to_copy'].choices = [(w.id, f"{w.task.name} x {w.quantity}") for w in works]

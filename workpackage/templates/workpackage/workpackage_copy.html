@@ -1,0 +1,40 @@
+{% extends 'tasks/base.html' %}
+
+<!-- Define the page title -->
+{% block title %}Copy Work{% endblock %}
+<br>
+<br>
+<!-- Define the page content -->
+{% block content %}
+<br>
+  <div class="container">
+    <h1>Copy Work</h1>
+    <br>
+    <form method="post">
+      {% csrf_token %}
+      <div class="form-group">
+        <label for="source_workpackage">Source Workpackage:</label>
+        <select id="source_workpackage" name="source_workpackage" class="form-control">
+          <option value="">--choose a WorkPackage--</option>
+          {% for workpackage in workpackages %}          
+            <option value="{{ workpackage.id }}">{{ workpackage.description }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <br>
+      <br>
+      <div class="form-group">
+        <label for="destination_workpackage">Destination Workpackage:</label>
+        <select id="destination_workpackage" name="destination_workpackage" class="form-control">
+          <option value="">--choose a WorkPackage--</option>
+          {% for workpackage in workpackages %}
+            <option value="{{ workpackage.id }}">{{ workpackage.description }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <br>
+      <br>
+      <button type="submit" class="btn btn-primary">Next</button>
+    </form>
+  </div>
+{% endblock %}

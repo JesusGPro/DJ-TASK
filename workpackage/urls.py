@@ -17,4 +17,8 @@ urlpatterns = [
     path('workpackage_create/', views.workpackage_create, name='workpackage_create'),
     path('workpackage_update/', views.workpackage_update, name='workpackage_update'),
     path('workpackages/<pk>/delete/', views.workpackage_delete, name='workpackage_delete'),
+
+    # Copy task in WorkPackages
+    path('copy_task/', views.copy_task_view, name='copy_task'),
+    path('copy-task/<int:source_workpackage_id>/<int:destination_workpackage_id>/', views.work_copy_view, name='work_copy'),
 ]

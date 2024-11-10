@@ -24,13 +24,13 @@
         <tbody>
           <tr>
             <td>{{ task.id }}</td>
-            <td width="100px">{{ task.code }}</td>
+            <td width="100px"><input class="form-control" type="text" id="input-task_code" value="{{ task.code }}" onblur="updateTaskName({{ task.id }}, 'code', this.value)"></td>
             <td width="400px"><input class="form-control" type="text" id="input-task_name" size="40" value="{{ task.name }}" onblur="updateTaskName({{ task.id }}, 'name', this.value)"></td>
             <td width="100px">{{ task.unit }}</td>
             <td></td>
             <td></td>
             
-            <td width="100px">{{ task.price }}</td>
+            <td width="100px"><input class="form-control" type="text" id="input-task_price" value="{{ task.price }}" onblur="updateTaskName({{ task.id }}, 'price', this.value)"></td>
             <td id="task-currency" width="100px" value="{{ task.currency }}">{{ task.currency }}</td>
             <td>{{ task.project }}</td>
             <td></td>

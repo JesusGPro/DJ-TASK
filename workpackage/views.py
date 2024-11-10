@@ -3,9 +3,9 @@ from django.urls import reverse
 from django.contrib import messages
 from django.forms import ModelForm
 from .models import WorkPackage, WorkLevel, Work, Measurement, WorkpackageTotals
-from .forms import WorkLevelForm, WorkPackageForm, WorkForm, WPIdForm, MeasurementForm
+from .forms import WorkLevelForm, WorkPackageForm, WorkForm, WPIdForm, MeasurementForm, CopyWorkForm, CopyWorkPackageForm
 from tasks.models import ActiveProject, Project
-from prices.models import Task
+from prices.models import Task, TaskComponent
 from django.http import JsonResponse, HttpResponse
 from django.forms.formsets import formset_factory
 import json
@@ -375,3 +375,90 @@ def workpackage_delete(request, pk):
     return render(request, 'workpackage/workpackage_delete.html', {'wp': wp})
 
 
+#################### Copying Works  ##########################################################
+# def copy_task_view(request):
+#     if request.method == 'POST':
+#         form = CopyWorkForm(request.POST)
+#         print(form.errors)
+#         if form.is_valid():
+#             source_workpackage_id = form.cleaned_data['source_workpackage']
+#             destination_workpackage_id = form.cleaned_data['destination_workpackage']
+#             works_to_copy_ids = request.POST.getlist('works_to_copy')
+            
+#             for work_to_copy_id in works_to_copy_ids:
+#                 copy_task(source_workpackage_id, destination_workpackage_id, work_to_copy_id)
+
+#             messages.success(request, 'Works copied successfully!')
+#             return redirect('copy_task')
+#     else:
+#         form = CopyWorkForm()
+
+#     workpackages = WorkPackage.objects.all()
+#     works = Work.objects.all()
+
+
+#     return render(request, 'workpackage/workpackage_copy.html', {'form': form, 'workpackages': workpackages, 'works': works})
+def copy_task_view(request):
+    if request.method == 'POST':
+        form = CopyWorkPackageForm(request.POST)
+        print(form.errors)
+        if form.is_valid():
+            source_workpackage_id = form.cleaned_data['source_workpackage']
+            destination_workpackage_id = form.cleaned_data['destination_workpackage']
+            return redirect('work_copy', source_workpackage_id=source_workpackage_id, destination_workpackage_id=destination_workpackage_id)
+    else:
+        form = CopyWorkPackageForm()
+    
+    workpackages = WorkPackage.objects.all()
+
+    return render(request, 'workpackage/workpackage_copy.html', {'form': form, 'workpackages': workpackages})
+
+def work_copy_view(request, source_workpackage_id, destination_workpackage_id):
+    if request.method == 'POST':
+        form = CopyWorkForm(source_workpackage_id, request.POST)
+        if form.is_valid():
+            works_to_copy_ids = form.cleaned_data['works_to_copy']
+            for work_to_copy_id in works_to_copy_ids:
+                copy_task(source_workpackage_id, destination_workpackage_id, work_to_copy_id)
+
+            messages.success(request, 'Works copied successfully!')
+            return redirect('copy_task')
+    else:
+        form = CopyWorkForm(source_workpackage_id)
+        works = Work.objects.filter(work_package_id=source_workpackage_id)
+        work_list = []
+        for work in works:
+            work_list.append({
+                'id': work.id,
+                'task_name': work.task.name,
+                'quantity': work.quantity
+            })
+
+    return render(request, 'workpackage/workpackage_copy_works.html', {'form': form, 'works': work_list})
+
+
+def copy_task(source_workpackage_id, destination_workpackage_id, work_to_copy_id):
+    source_workpackage = WorkPackage.objects.get(id=source_workpackage_id)
+    destination_workpackage = WorkPackage.objects.get(id=destination_workpackage_id)
+    work_to_copy = Work.objects.get(id=work_to_copy_id)
+
+    # Create a new work with the same attributes as the original work
+    new_work = Work(
+        task=work_to_copy.task,
+        quantity=work_to_copy.quantity,
+        work_package=destination_workpackage
+    )
+    new_work.save()
+
+    # Copy measurements
+    for measurement in work_to_copy.measurement_set.all():
+        new_measurement = Measurement(
+            work=new_work,
+            description=measurement.description,
+            nr=measurement.nr,
+            width=measurement.width,
+            length=measurement.length,
+            height=measurement.height,
+            comment=measurement.comment
+        )
+        new_measurement.save()

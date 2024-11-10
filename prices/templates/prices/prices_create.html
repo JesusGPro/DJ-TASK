@@ -8,7 +8,7 @@
     <tr>
       <th>id</th>
       <th>Code</th>
-      <th>Denomination</th>
+      <th width="400px">Denomination</th>
       <th>Unit</th>
       <th>Price</th>
       <th>Currency</th>
@@ -27,7 +27,7 @@
       <th>
         <input class="form-control" id="input-code-{{ price.id }}" type="text" size="15" value="{{ price.code }}" onblur="updatePrice('{{ price.id }}', 'code')">
       </th>
-      <th>
+      <th width="400px">
         <input class="form-control" id="input-denomination-{{ price.id }}" type="text" size="20" value="{{ price.denomination }}" onblur="updatePrice('{{ price.id }}', 'denomination')">
       </th>
       <th>
@@ -71,6 +71,7 @@
           <option value="Slope Support">Slope_support</option>
           <option value="electrical">Electrical</option>
           <option value="mechanical">Mechanical</option>
+          <option value="finishes">Finishes</option>
           <option value="communication">Communication</option>
           <option value="Safety">Safety</option>
           <option value="Fire Fighting">Fire_fighting</option>
@@ -106,12 +107,12 @@
       <div class="mb-3">
         <label for="code" class="form-label" id="label-code">Code</label>
         <input type="text" class="form-control" id="code" name="code">
-        <div id="nameHelp" class="form-text">Introduce the code of your price max 20 characters</div>
+        <div id="nameHelp" class="form-text">Introduce the code of your Component max 20 characters</div>
       </div>
       <div class="mb-3">
         <label for="denomination" class="form-label" id="label-denomination">Denomination</label>
         <textarea class="form-control" id="denomination" name="denomination"></textarea>
-        <div id="denominationHelp" class="form-text">Introduce all deteails you want to show about your Price</div>
+        <div id="denominationHelp" class="form-text">Introduce all deteails you want to show about your Component</div>
       </div>
       <div class="mb-3">
         <label for="unit" class="form-label" id="label-unit">Unit of measure</label>
@@ -158,6 +159,7 @@
             <option value="Slope Support">Slope_support</option>
             <option value="electrical">Electrical</option>
             <option value="mechanical">Mechanical</option>
+            <option value="finishes">Finishes</option>
             <option value="communication">Communication</option>
             <option value="Safety">Safety</option>
             <option value="Fire Fighting">Fire_fighting</option>

@@ -1,4 +1,5 @@
 venv
+.venv
 user.txt
 git.txt
 requirements.txt

@@ -1,8 +1,10 @@
+{% load static %}
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="shortcut icon" href="{% static 'app/media/favicon.ico' %}">
     <title>Budget - {% block title %}{% endblock %}</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous">
     <style>
@@ -33,22 +35,47 @@
         background-color: #ffc;
         color: #900;
     }
+    .dropdown-menu .dropdown-menu {
+      position: absolute;
+      top: 0;
+      left: 100%;
+      margin-top: 0;
+      margin-left: 0;
+    }
+    
+    favicon {
+      opacity: 0.5;
+    }
+    .logo {
+      margin: 0 10px; /* add some margin to separate from the navbar edges */
+      border-radius: 5px; /* add a slight rounded corner effect */
+      object-fit: contain; /* ensure the image is scaled to fit within the container */
+      width: 40px;
+    }
+    /* static/styles.css */
+
+    
 
     </style>
 </head>
 <body>
+  <body>
     <div class="container">
-    <nav class="navbar navbar-expand-lg bg-body-tertiary">
+      <nav class="navbar navbar-expand-lg bg-body-tertiary">
         <div class="container-fluid">
+          <a class="navbar-item" href="https://www.albawani.net/">
+            <img src="{% static 'AlBawani.jpg' %}" alt="AlBawani Logo" class="logo">
+          </a>
           <a class="navbar-brand" href="{% url 'home' %}">Home</a>
+          {% if request.user.is_authenticated %}
           <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarSupportedContent" aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
             <span class="navbar-toggler-icon"></span>
           </button>
-          <li class="nav-item"></li>
-                <a class="nav-link active" aria-current="page" href="{% url 'currency_create' %}">Currency</a>
-          </li>
           <div class="collapse navbar-collapse" id="navbarSupportedContent">
-            <ul class="navbar-nav me-auto mb-2 mb-lg-0">              
+            <ul class="navbar-nav me-auto mb-2 mb-lg-0">
+              <li class="nav-item">
+                <a class="nav-link active" aria-current="page" href="{% url 'currency_create' %}">Currency</a>
+              </li>
               <li class="nav-item dropdown">
                 <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
                   Project
@@ -56,21 +83,21 @@
                 <ul class="dropdown-menu">
                   <li><a class="dropdown-item" href="{% url 'project_create' %}">Create a Project</a></li>
                   <li><a class="dropdown-item" href="{% url 'project_select' %}">Select a Project</a></li>
-                  <li><hr class="dropdown-divider"></li>
+                  
                 </ul>
-                <li class="nav-item">
-                  {% if request.session.selected_project_id %}
-                      <a class="nav-link active" aria-current="page" href="{% url "prices_create" request.session.selected_project_id %}">Component</a>
-                  {% else %}
-                      <a class="nav-link active" aria-current="page" href="#">Login/choose project for a price</a>
-                  {% endif %}
-                </li>
               </li>
-              <li class="nav-item"></li>
+              <li class="nav-item">
+                {% if request.session.selected_project_id %}
+                  <a class="nav-link active" aria-current="page" href="{% url "prices_create" request.session.selected_project_id %}">Component</a>
+                {% else %}
+                  <a class="nav-link active" aria-current="page" href="#">Login/Select Project to create</a>
+                {% endif %}
+              </li>
               {% if request.session.selected_project_id %}
+              <li class="nav-item">
                 <a class="nav-link active" aria-current="page" href="{% url 'task_create' request.session.selected_project_id %}">Task</a>
-              {% endif %}
               </li>
+              {% endif %}
               <li class="nav-item dropdown">
                 <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
                   WorkPackages
@@ -78,29 +105,85 @@
                 <ul class="dropdown-menu">
                   <li><a class="dropdown-item" href="{% url 'workpackage_create' %}">Create WorkPackages</a></li>
                   <li><a class="dropdown-item" href="{% url 'budget_assign' %}">Assign budget</a></li>
-                  <li><hr class="dropdown-divider"></li>
+      
                 </ul>
-                
               </li>
+              <li class="nav-item dropdown">
+                <a class="nav-link dropdown-toggle" href="#" id="reportsDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                  Reports
+                </a>
+                <ul class="dropdown-menu" aria-labelledby="reportsDropdown">
+                  <li><a class="dropdown-item" href="{% url 'work_package_assign' %}">WorkPackage Report</a></li>
+                  <li><a class="dropdown-item" href="{% url 'work_package_report_total_pick' %}">WorkPackage Report (all)</a></li>
+                  <li class="component-report-dropdown">
+                    <a class="dropdown-item dropdown-toggle" href="#" data-bs-toggle="dropdown" aria-expanded="false">Component Report</a>
+                    <ul class="dropdown-menu">
+                      <li><a class="dropdown-item" href="{% url 'component_report' %}">View Component Report</a></li>
+                      <li><a class="dropdown-item" href="{% url 'component_report_pdf' %}">Create PDF</a></li>
+                      <li><a class="dropdown-item" href="{% url 'component_report_csv' %}">Create CSV</a></li>
+                    </ul>
+                  </li>
+                  <li class="task-report-dropdown">
+                    <a class="dropdown-item dropdown-toggle" href="#" data-bs-toggle="dropdown" aria-expanded="false">Task Report</a>
+                    <ul class="dropdown-menu">
+                      <li><a class="dropdown-item" href="{% url 'task_report' %}">View Task Report</a></li>
+                      <li><a class="dropdown-item" href="{% url 'task_report_pdf' %}">Create PDF</a></li>
+                      <li><a class="dropdown-item" href="{% url 'task_report_csv' %}">Create CSV</a></li>
+                      <li><a class="dropdown-item" href="{% url 'task_report_weight' %}">View Task Report Weighted</a></li>
+                      <li><a class="dropdown-item" href="{% url 'task_report_weight_pdf' %}">Report Weighted PDF</a></li>
+                      <li><a class="dropdown-item" href="{% url 'task_report_weight_csv' %}">Report Weighted CSV</a></li>
+                      <li><a class="dropdown-item" href="{% url 'task_components_report' %}">View Task Report with Components</a></li>
+                      <li><a class="dropdown-item" href="{% url 'task_components_report_pdf' %}">Create Task Report with Components PDF</a></li>
+                      <li><a class="dropdown-item" href="{% url 'task_components_report_csv' %}">Create Task Report with Components CSV</a></li>
+                      <li><a class="dropdown-item" href="{% url 'task_components_report_excel' %}">Create Task Report with Components XLSX</a></li>
+                  </ul>
+                </li>                    
+              </ul>
+            </li>
+
+            <li class="nav-item dropdown">
+              <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                Edit
+              </a>
+              <ul class="dropdown-menu">
+                <li><a class="dropdown-item" href="{% url 'copy_task' %}">Copy Works in WorkPackages</a></li>
+                {% comment %} <li><a class="dropdown-item" href="#">Other 1</a></li>
+                <li><a class="dropdown-item" href="#">Other 2</a></li> {% endcomment %}
+                <li><hr class="dropdown-divider"></li>
+              </ul>
+            </li>
+            {% endif %}
+            <ul class="navbar-nav ml-auto" style="list-style-type: none;">
+              {% if not request.user.is_authenticated %}
+              <li class="nav-item">
+                <a class="btn btn-success" id = 'login_menu' href="{% url 'login_request' %}">Log in</a>
+              </li>
+              {% else %}
+              {% comment %} <li class="nav-item">
+                User: {{ request.user.username }}
+                <a class="btn btn-success" id = 'login_menu' href="{% url 'logout_request' %}">Log out</a>
+              </li> {% endcomment %}
+              <li class="nav-item">
+                <button class="btn btn-secondary" style="border-radius: 20px; padding: 5px 10px; border: none;">
+                  User: {{ request.user.username }}
+                </button>
+                <a class="btn btn-success" id='login_menu' href="{% url 'logout_request' %}">Log out</a>
+              </li>
+              {% endif %}
             </ul>
-            
-            <form class="d-flex" role="search">
-              <input class="form-control me-2" type="search" placeholder="Search" aria-label="Search">
-              <button class="btn btn-outline-success" type="submit">Search</button>
-            </form>
           </div>
         </div>
       </nav>
     </div>
     <main>
       {% if messages %}
-          <div class="container">
-            <div class="messages">
+        <div class="container">
+          <div class="messages">
             {% for message in messages %}
               <div class="notification is-info">{{ message }}</div>
             {% endfor %}
-            </div>
           </div>
+        </div>
       {% endif %}
       <section class="section">
         <div class="content">
@@ -108,13 +191,35 @@
         </div>
       </section>
     </main>
-    
-      <div class="container">
-        <footer class='footer'>
-            <small>&copy; 2024, Jesus Maria Garcia Pro</small>
-        </footer>
-      </div>
+    <div class="container">
+      <footer class='footer'>
+        <small>&copy; 2024, Jesus Maria Garcia Pro</small>
+      </footer>
+    </div>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js" integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz" crossorigin="anonymous"></script>
     <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.11.8/dist/umd/popper.min.js" integrity="sha384-I7E8VVD/ismYTF4hNIPjVp/Zjvgyol6VFvRkX/vR+Vc4jQkC+hVqc2pM8ODewa9r" crossorigin="anonymous"></script>
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
+  </body>
 </body>
+
+<script>
+  // to enable anidated dropdown menu
+  $(document).ready(function() {
+    $('.component-report-dropdown a.dropdown-toggle, .task-report-dropdown a.dropdown-toggle').on("click", function(e) {
+      $(this).next('.dropdown-menu').toggle();
+      e.stopPropagation();
+    });
+  
+    // Initialize dropdown menu on page load
+    $('.component-report-dropdown .dropdown-menu, .task-report-dropdown .dropdown-menu').hide();
+  
+    // Hide dropdown menu when clicking outside
+    $(document).on("click", function(e) {
+      if (!$(e.target).closest('.component-report-dropdown, .task-report-dropdown').length) {
+        $('.component-report-dropdown .dropdown-menu, .task-report-dropdown .dropdown-menu').hide();
+      }
+    });
+  });
+</script>
+
 </html>
