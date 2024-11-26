@@ -47,4 +47,9 @@ urlpatterns = [
     path('work_package_report_measurement_csv/<int:work_package_id>/', views.work_package_report_measurement_csv, name='work_package_report_measurement_csv'),
     path('work_package_report_measurement_xlsx/<int:work_package_id>/', views.work_package_report_measurement_xlsx, name='work_package_report_measurement_xlsx'),
 
+    # workpackages with children
+    path('work-packagechildren-assign/', views.work_packagechildren_assign, name='work_packagechildren_assign'),
+    path('work-packagechildren-report/<int:work_package_id>/', views.work_packagechildren_report, name='work_packagechildren_report'),
+    path('work-packagechildren-report-pdf/<int:work_package_id>/', views.work_packagechildren_report_pdf, name='work_packagechildren_report_pdf'),
+    path('work-packagechildren-report-excel/<int:work_package_id>/', views.work_packagechildren_report_excel, name='work_packagechildren_report_excel'),
 ]

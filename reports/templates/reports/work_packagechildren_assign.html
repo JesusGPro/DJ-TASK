@@ -1,0 +1,44 @@
+{% extends 'tasks/base.html' %}
+{% block content %}
+
+<div class="container">
+      <br>
+      <h4>Assign a Workpackage for the report</h4>
+    <div class="row">
+      <div class="col-md-12">
+        <h5>WorkPackages: {{ project_id }} - {{ project_description }} </h5>
+      </div>
+    </div>
+    <br>
+    <form method="post">
+      {% csrf_token %}
+      {% comment %} {{ form }} {% endcomment %}
+      <label for="work_package_id" class="control-label">Select Work Package:</label>
+      <select id="work_package_id" name="work_package_id" class="form-control">
+        <option value="">-- Select one Work Package of the list -- </option>
+        {% for wp in wps %}
+          <option value="{{ wp.id }}">{{wp.id}} -- {{ wp.name }} - {{ wp.description }}</option>
+        {% empty %}
+          <option disabled>No work packages available</option>
+        {% endfor %}
+      </select>
+      <br>
+      <input class="btn btn-primary" type="submit" name="view_report" value="View the Report">
+      <input class="btn btn-success" type="submit" name="pdf_button" value="Generate PDF">
+      <input class="btn btn-success" type="submit" name="excel_button" value="Generate XLSX">
+      {% comment %} <input class="btn btn-primary" type="submit" name="view_measurements" value="View the Report with measurements">
+      <input class="btn btn-success" type="submit" name="view_measurements_pdf" value="Report with measurements PDF">
+      <input class="btn btn-success" type="submit" name="view_measurements_csv" value="Report with measurements CSV">
+      <br><br>
+      <input class="btn btn-success" type="submit" name="view_measurements_xlsx" value="Report with measurements XLSX"> {% endcomment %}
+    </form>
+</div>
+
+<br>
+<br>
+<br>
+<br>
+
+{% endblock %}
+
+

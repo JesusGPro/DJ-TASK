@@ -313,8 +313,6 @@ def workpackage_create(request):
     project_id = active_project.project_id
     project = Project.objects.get(id=project_id)
     project_description = project.description
-    # latest_work_level = WorkLevel.objects.filter(project_id=project_id).latest('id')
-    # level_number = latest_work_level.level_number
     
     wps = WorkPackage.objects.all().order_by('name')
    

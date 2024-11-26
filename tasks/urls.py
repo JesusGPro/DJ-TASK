@@ -12,4 +12,6 @@ urlpatterns = [
     # Currency
     path('currency_create/', views.currency_create, name='currency_create'),
     path('currency_edit/', views.currency_edit, name='currency_edit'),
+    # Markdown
+    path('instructions/', views.markdown_view, name='markdown_view'),
 ]

@@ -1,0 +1,18 @@
+{% extends 'tasks/base.html' %}
+{% block content %}
+<style>
+    img {
+        max-width: 100%;  /* Scale down to fit the container */
+        height: auto;      /* Maintain aspect ratio */
+    }
+</style>
+<div class="container">
+<body>
+    <div>
+        {{ content|safe }}  <!-- Render the HTML content -->
+    </div>
+
+</body>
+</div>
+
+{% endblock %}

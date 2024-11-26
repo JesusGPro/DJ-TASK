@@ -2,10 +2,11 @@
 {% block content %}
 {% load tags %}
 {% load static %}
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.7.1/jquery.min.js" integrity="sha512-v2CJ7UaYy4JwqLDIrZUI/4hqeoQieOmAZNXBeQyjo21dadnwR+8ZaIJVT8EE2iyI61OV8e6M8PP2/4hpQINQ/g==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
 
 <div class="container">
-    <h1>Task Detail, project id: {{project_id}}</h1>
-    <p>Task name: {{ task.name }}</p>
+    <h1>Task Detail{% comment %}, project id: {{project_id}} {% endcomment %}</h1>
+    <h5>Task name: {{ task.name }}</h5>
     <table class="table table-bordered table-striped">
         <thead class="thead-dark">
           <tr>
@@ -26,10 +27,9 @@
             <td>{{ task.id }}</td>
             <td width="100px"><input class="form-control" type="text" id="input-task_code" value="{{ task.code }}" onblur="updateTaskName({{ task.id }}, 'code', this.value)"></td>
             <td width="400px"><input class="form-control" type="text" id="input-task_name" size="40" value="{{ task.name }}" onblur="updateTaskName({{ task.id }}, 'name', this.value)"></td>
-            <td width="100px">{{ task.unit }}</td>
+            <td width="100px"><input class="form-control" type="text" id="input-task_unit" size="40" value="{{ task.unit }}" onblur="updateTaskName({{ task.id }}, 'unit', this.value)"></td>
             <td></td>
             <td></td>
-            
             <td width="100px"><input class="form-control" type="text" id="input-task_price" value="{{ task.price }}" onblur="updateTaskName({{ task.id }}, 'price', this.value)"></td>
             <td id="task-currency" width="100px" value="{{ task.currency }}">{{ task.currency }}</td>
             <td>{{ task.project }}</td>
@@ -51,14 +51,14 @@
             <th>Project</th>
             <th></th>
           </tr>
-          {% for component, denomination, unit, price_comp in zipped_data %}
+          {% for id, component, denomination, unit, price_comp in zipped_data %}
           <tr>
             <td width="150px">{{ component.id }}</td>
-            <td width="350px">{{ component.code }}</td>
-            <td width="100px">{{ denomination }}</td>
-            <td width="100px">{{ unit }}</td>
-            <td width="100px">{{ component.quantity }}</td>
-            <td width="100px">{{ price_comp }}</td>
+            <td width="200px"><input class="form-control" id="input-code-{{ component.id }}" type="text" size="15" value="{{ component.code }}" onblur="updatePrice('{{ id }}', 'code', this.value)"></td>
+            <td width="100px"><input class="form-control" id="input-denomination-{{ component.id }}" type="text" size="20" value="{{ denomination }}" onblur="updatePrice('{{ id }}', 'denomination', this.value)"></td>
+            <td width="100px"><input class="form-control" id="input-unit-{{ component.id }}" type="text" size="3" value="{{ unit }}" onblur="updatePrice('{{ id }}', 'unit', this.value)"></td>
+            <td width="150px" ><input class="form-control" type="number" step="0.000001" id="input-component-quantity-{{ component.id }}" value="{{ component.quantity }}" onblur="updateComponentQuantity({{ component.id }}, 'quantity', this.value)"></td>
+            <td width="200px"><input class="form-control" id="input-price-{{ component.id }}" type="number" step="0.01" value="{{ price_comp }}" onblur="updatePrice('{{ id }}', 'price', this.value)"></td>
             <td width="100px" >{% multiply price_comp component.quantity %}</td>
             <td width="100px">{{ task.currency }}</td>
             <td width="100px">{{ task.project }}</td>
@@ -88,7 +88,7 @@
        
 </div>
 <div class="container">
-<h2>Task Components</h2>
+<h2>Add a Component to the Task</h2>
       <form method="post" action="{% url 'tasks_add_component' project_id=project_id pk=task.id %}">
         {% csrf_token %}
         <input type="hidden" name="task" value="{{ task.id }}" />
@@ -102,7 +102,7 @@
           <tbody id="task-components">
             <tr>
               <td>
-                <select id="component-select" class="form-control" name="code">
+                <select id="component-select" class="form-control" name="code" style="width: 900px;">
                   <option value=" ">-- Choose a Component --</option>
                   {% for price in prices %}
                     <option value="{{ price.code }}">{{price.id}}-{{ price.code }} - {{ price.denomination }} - {{ price.unit }} - {{price.price}} - {{ price.currency }} - {{price.tag}}</option>
@@ -114,12 +114,13 @@
                 {% comment %} <input type="hidden" name="code" value="{{ prices.0.code }}"> {% endcomment %}
               </td>
               <td>
-                <input type="number" id="quantity-input" value="1.000" step="0.001" class="form-control" onblur="updateTotalPrice()" name="quantity">
+                <input type="number" id="quantity-input" value="1.000000" step="0.000001" class="form-control" onfocus="this.value=''" onblur="updateTotalPrice()" name="quantity">
               </td>
             </tr>
           </tbody>
         </table>
-
+        <div id="nameAddComponent" class="form-text">Only 6 decimal positions are allowed for Quantity</div>
+        <br>
         <button type="submit" class="btn btn-primary" id="add-component">Add Component</button>
         <br><br>
         
@@ -129,5 +130,17 @@
 
 
 <script src="{% static 'js/task_update.js' %}"></script>
+<script>
+// help to introduce a name to look for components
+  $(document).ready(function() {
+      $('#component-select').select2({
+        theme: 'bootstrap',
+        placeholder: "Click here to choose a Component",
+        allowClear: true
+    });
+  });
+  
+  
+</script>
 
 {% endblock %}

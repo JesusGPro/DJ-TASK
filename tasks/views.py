@@ -5,6 +5,20 @@ from .forms import ProjectForm, CurrencyForm
 from django.contrib.auth.decorators import login_required
 from django.http import HttpResponse
 from django.contrib import messages
+import markdown
+import os
+
+def base_view(request):
+    # Get all projects created by the user
+    user_projects = Project.objects.filter(tenant=request.user)
+    # Get active projects for the user
+    active_projects = ActiveProject.objects.filter(user=request.user)
+
+    context = {
+        'user_projects': user_projects,
+        'active_projects': active_projects,
+    }
+    return render(request, 'base.html', context)
 
 
 def home(request):
@@ -50,6 +64,13 @@ def project_delete(request, pk):
     project = get_object_or_404(Project, pk=pk)
     if request.method == 'POST':
         project.delete()
+        # Check if there are any remaining projects for the user
+        user_projects = Project.objects.filter(tenant=request.user)
+        
+        if not user_projects.exists():
+            # Clear the session if no projects are left
+            request.session.pop('selected_project_id', None)
+            messages.info(request, "All projects have been deleted. Please create a new project.")
         return redirect('home')
     return render(request, 'tasks/project_delete.html', {'project': project, 'pk': pk})
 
@@ -98,3 +119,18 @@ def currency_edit(request):
     else:
         form = CurrencyForm(instance=currency_instance)
     return render(request, 'tasks/currency_edit.html', {'form': form, 'currency': currency_instance})
+
+
+######################################### Instructions with Markdown ##########################################
+def markdown_view(request):
+    # Path to your markdown file
+    md_file_path = os.path.join(os.path.dirname(__file__), 'instructions', 'instructions.md')
+    
+    # Read the markdown file
+    with open(md_file_path, 'r') as md_file:
+        content = md_file.read()
+    
+    # Convert markdown to HTML
+    html_content = markdown.markdown(content)
+    
+    return render(request, 'tasks/markdown.html', {'content': html_content})

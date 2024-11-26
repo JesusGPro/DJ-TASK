@@ -34,10 +34,11 @@
                   <a class="btn btn-warning" href="{% url 'tasks_detail' project_id=project_id pk=task.id %}">View/Edit</a>
                 </div>
                 <div class="col-md-3">
-                  <form action="{% url 'tasks_delete' project_id=project_id pk=task.id %}" method="post">
+                  {% comment %} <form action="{% url 'tasks_delete' project_id=project_id pk=task.id %}" method="post">
                     {% csrf_token %}
                     <button type="submit" class="btn btn-danger">Delete</button>
-                  </form>
+                  </form> {% endcomment %}
+                  <a class="btn btn-danger" href="{% url 'tasks_delete' project_id=project_id pk=task.id %}">Delete</a>
                 </div>
               </div>
             </td>
@@ -59,17 +60,9 @@
         <label class="form-label" for="unit">Unit</label>
         <input class="form-control" type="text" id="project" name="unit"><br>
         <label class="form-label" for="price">Price</label>
-        <input class="form-control" type="number" id="price" name="price"><br>
+        <input class="form-control" type="number" id="price" name="price" step="0.01" min="0" required><br>
         <label class="form-label" for="currency">Currency</label>
         <input class="form-control" id="currency" name="currency" value={{ project.currency }} readonly>
-        {% comment %} <select class="form-control" id="currency" name="currency">
-            <option value="">Choose currency</option>
-            <option value="USD">USD</option>
-            <option value="EUR">EUR</option>
-            <option value="SAR">SAR</option>
-            <option value="No currency">No currency</option>
-        </select><br> {% endcomment %}
-
         <input type="submit" class="btn btn-primary" value="Create Task" ><br><br><br>
         <input type="hidden" name="project" value="{{ project.id }}">
       </form>

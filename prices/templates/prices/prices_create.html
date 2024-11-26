@@ -2,18 +2,27 @@
 {% block content %}
 
 <div class="container">
-<h1>Create Price for {{ project.name }} and user {{ user }}</h1>
+<h1>Create Components for {{ project.name }} and user {{ user }}</h1>
+
+<!-- Search Form -->
+<form method="GET" action="{% url 'prices_create' project_id %}" class="d-flex align-items-center">
+  <input class="form-control me-2" type="text" name="search" value="{{ search_term }}" placeholder="Search by denomination">
+  <button type="submit" class="btn btn-primary me-2">Search</button>
+  <a href="{% url 'prices_create' project_id %}" class="btn btn-secondary">Reset</a>
+</form>
+
+
 <table class="table table-bordered table-striped">
   <thead class="thead-dark">
     <tr>
-      <th>id</th>
-      <th>Code</th>
-      <th width="400px">Denomination</th>
-      <th>Unit</th>
-      <th>Price</th>
-      <th>Currency</th>
-      <th>Tag</th>
-      <th>Reference</th>
+      <th><a href="?sort=id&search={{ request.GET.search }}">ID</a></th>
+      <th width="130px"><a href="?sort=code&search={{ request.GET.search }}">Code</a></th>
+      <th width="400px"><a href="?sort=denomination&search={{ request.GET.search }}">Denomination</a></th>
+      <th><a href="?sort=unit&search={{ request.GET.search }}">Unit</a></th>
+      <th><a href="?sort=price&search={{ request.GET.search }}">Price</a></th>
+      <th><a href="?sort=currency&search={{ request.GET.search }}">Currency</a></th>
+      <th><a href="?sort=tag&search={{ request.GET.search }}">Tag</a></th>
+      <th><a href="?sort=reference&search={{ request.GET.search }}">Reference</a></th>
       <th>Project</th>
       <th>User</th>
     </tr>
@@ -33,7 +42,7 @@
       <th>
         <input class="form-control" id="input-unit-{{ price.id }}" type="text" size="3" value="{{ price.unit }}" onblur="updatePrice('{{ price.id }}', 'unit')">
       </th>
-      <th>
+      <th width="150px">
         <input class="form-control" id="input-price-{{ price.id }}" type="number" size="3" value="{{ price.price }}" onblur="updatePrice('{{ price.id }}', 'price')">
       </th>
       <th>
@@ -47,38 +56,45 @@
         </select>
       </th>
       <th>
-        {% comment %} <input id="input-tag-{{ price.id }}" type="text" value="{{ price.tag }}" onblur="updatePrice('{{ price.id }}', 'tag')"> {% endcomment %}
         <select class="form-control" id="input-tag-{{ price.id }}" name="tag" onchange="updatePrice('{{ price.id }}', 'tag')">
             <option value="">{{ price.tag }}</option>
             <option value="manpower">manpower</option>
             <option value="material">material</option>
             <option value="machinery">machinery</option>
+            <option value="machinery">facility</option>
             <option value="canon">canon</option>
             <option value="subcontract">subcontract</option>
             <option value="other">other</option>
             <option value="overhead">overhead</option>
         </select>
       <th>
-        {% comment %} <input id="input-reference-{{ price.id }}" type="text" value="{{ price.reference }}" onblur="updatePrice('{{ price.id }}', 'reference')"> {% endcomment %}
         <select class="form-control" id="input-reference-{{ price.id }}" name="reference" onchange="updatePrice('{{ price.id }}', 'reference')">
           <option value="">{{ price.reference }}</option>
           <option value="Excavation">Excavation</option>
           <option value="Concrete">Concrete</option>
           <option value="Formwork">Formwork</option>
+          <option value="Ring Precast Plant">Ring Precast Plant</option>
+          <option value="Viaduct Precast Plant">Viaduct Precast Plant</option>
           <option value="Rebar">Rebar</option>
           <option value="Active steel bars">Active_rebar</option>
-          <option value="Tunnel Support">Tunnel_support</option>
+          <option value="Tunnel TBM">Tunnel TBM</option>
+          <option value="Tunnel Mined">Tunnel Mined</option>
           <option value="Slope Support">Slope_support</option>
-          <option value="electrical">Electrical</option>
-          <option value="mechanical">Mechanical</option>
-          <option value="finishes">Finishes</option>
-          <option value="communication">Communication</option>
+          <option value="Electrical">Electrical</option>
+          <option value="Mechanical">Mechanical</option>
+          <option value="Finishes">Finishes</option>
+          <option value="Communication">Communication</option>
           <option value="Safety">Safety</option>
-          <option value="Fire Fighting">Fire_fighting</option>
+          <option value="Environmental">Environmental</option>
+          <option value="Quality Control">Quality Control</option>
+          <option value="Topographic Survey">Topographic Survey</option>
+          <option value="Fire Fighting">Fire fighting</option>
           <option value="Security">Security</option>
           <option value="Tracks">Tracks</option>
           <option value="Pavement">Pavement</option>
+          <option value="Construction Aids">Construction Aids</option>
           <option value="Overhead">Overhead</option>
+          <option value="Facilities">Facilities</option>
       </select>
       </th>
       <th width="30px">
@@ -105,6 +121,8 @@
   <form method="post">
     {% csrf_token %}
       <div class="mb-3">
+        <button type="button" class="btn btn-primary" onclick="addOneToLastCode()">Add one to the last code</button>
+        <br>
         <label for="code" class="form-label" id="label-code">Code</label>
         <input type="text" class="form-control" id="code" name="code">
         <div id="nameHelp" class="form-text">Introduce the code of your Component max 20 characters</div>
@@ -140,6 +158,7 @@
             <option value="manpower">manpower</option>
             <option value="material">material</option>
             <option value="machinery">machinery</option>
+            <option value="machinery">facility</option>
             <option value="canon">canon</option>
             <option value="subcontract">subcontract</option>
             <option value="other">other</option>
@@ -149,30 +168,38 @@
     <div class="mb-3">
         <label for="reference" class="form-label" id="label-reference">Reference</label>
         <select class="form-control" id="reference" name="reference">
-            <option value="">Select a tag</option>
-            <option value="Excavation">Excavation</option>
-            <option value="Concrete">Concrete</option>
-            <option value="Formwork">Formwork</option>
-            <option value="Rebar">Rebar</option>
-            <option value="Active steel bars">Active_rebar</option>
-            <option value="Tunnel Support">Tunnel_support</option>
-            <option value="Slope Support">Slope_support</option>
-            <option value="electrical">Electrical</option>
-            <option value="mechanical">Mechanical</option>
-            <option value="finishes">Finishes</option>
-            <option value="communication">Communication</option>
-            <option value="Safety">Safety</option>
-            <option value="Fire Fighting">Fire_fighting</option>
-            <option value="Security">Security</option>
-            <option value="Tracks">Tracks</option>
-            <option value="Pavement">Pavement</option>
-            <option value="Overhead">Overhead</option>
+          <option value="">Select a tag</option>
+          <option value="Excavation">Excavation</option>
+          <option value="Concrete">Concrete</option>
+          <option value="Formwork">Formwork</option>
+          <option value="Ring Precast Plant">Ring Precast Plant</option>
+          <option value="Viaduct Precast Plant">Viaduct Precast Plant</option>
+          <option value="Rebar">Rebar</option>
+          <option value="Active steel bars">Active_rebar</option>
+          <option value="Tunnel TBM">Tunnel TBM</option>
+          <option value="Tunnel Mined">Tunnel Mined</option>
+          <option value="Slope Support">Slope_support</option>
+          <option value="Electrical">Electrical</option>
+          <option value="Mechanical">Mechanical</option>
+          <option value="Finishes">Finishes</option>
+          <option value="Communication">Communication</option>
+          <option value="Safety">Safety</option>
+          <option value="Environmental">Environmental</option>
+          <option value="Quality Control">Quality Control</option>
+          <option value="Topographic Survey">Topographic Survey</option>
+          <option value="Fire Fighting">Fire fighting</option>
+          <option value="Security">Security</option>
+          <option value="Tracks">Tracks</option>
+          <option value="Pavement">Pavement</option>
+          <option value="Construction Aids">Construction Aids</option>
+          <option value="Overhead">Overhead</option>
+          <option value="Facilities">Facilities</option>
         </select>
     </div>
     <input type="hidden" name="project" value="{{ project.id }}">
     <input type="hidden" name="users" value="{{ user }}">
       <br>
-      <button type="submit" class="btn btn-primary">Create Price</button>
+      <button type="submit" class="btn btn-primary">Create Component</button>
     </form>
   </div>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.7.1/jquery.min.js"></script>
@@ -226,7 +253,35 @@
         }
         return cookieValue;
       }
-  
+      // Add one to the last code /////////////////////////////////////////////////////////////
+      
+        function addOneToLastCode() {
+          // Fetch the last code from the server
+          fetch('{% url "get_last_code" project_id=project.id %}')
+            .then(response => response.json())
+            .then(data => {
+              const lastCode = data.last_code;
+              // Increment the last code - you may need to adjust this logic based on your code format
+              const newCode = incrementCode(lastCode);
+              document.getElementById('code').value = newCode;
+            })
+            .catch(error => console.error('Error fetching last code:', error));
+        }
+      
+        function incrementCode(code) {
+          // Assuming the code format is something like "034100_07M"
+          const parts = code.split('_');
+          const numberPart = parseInt(parts[1].slice(0, -1)); // Extract the number part
+          const letterPart = parts[1].slice(-1); // Extract the letter part
+      
+          // Increment the number part
+          const newNumberPart = (numberPart + 1).toString().padStart(2, '0'); // Add leading zeros if needed
+          return `${parts[0]}_${newNumberPart}${letterPart}`; // Construct the new code
+        }
+      
+
+
+
     </script>
 
 

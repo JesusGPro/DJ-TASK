@@ -1,4 +1,5 @@
 from django.db import models
+from tasks.models import Project
 
 
 class WorkLevel(models.Model):
@@ -12,6 +13,7 @@ class WorkPackage(models.Model):
     name = models.CharField(max_length=255, unique=True)
     description = models.TextField(blank=True)
     parent = models.ForeignKey('self', on_delete=models.CASCADE, null=True, blank=True)
+    project = models.ForeignKey(Project, on_delete=models.CASCADE, related_name='workpackages')
 
     def __str__(self):
         return self.name

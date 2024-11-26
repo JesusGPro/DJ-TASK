@@ -63,8 +63,8 @@
     {% csrf_token %}
     <div class="mb-3">
       <label for="name" class="form-label">Level</label>
-      <input type="text" class="form-control" id="name" name="name">
-      <div id="emailHelp" class="form-text">Introduce a int number with the same figures that the total number of levels, for example: 10000</div>
+      <input type="number" class="form-control" id="name" name="name">
+      <div id="emailHelp" class="form-text">Introduce an integer number with the same figures that the total number of levels, for example: 10000</div>
     </div>
     <div class="mb-3">
       <label for="description" class="form-label">Description</label>
@@ -81,6 +81,7 @@
         {% endfor %}
       </select>
     </div>
+    <input type="hidden" name="project" value="{{ project_id }}">
     <div class="mb-3">
       <button type="submit" class="btn btn-primary" id="add-wp">Add WorkPackage</button>
     </div>

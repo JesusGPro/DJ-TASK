@@ -14,7 +14,7 @@ class WorkLevelForm(ModelForm):
 class WorkPackageForm(forms.ModelForm):
     class Meta:
         model = WorkPackage
-        fields = ('name', 'description', 'parent')
+        fields = ('name', 'description', 'parent', 'project')
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)

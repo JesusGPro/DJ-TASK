@@ -2,10 +2,14 @@ from django.urls import path
 from . import views
 
 urlpatterns = [
+    # components
     path('projects/<int:project_id>/prices_create/', views.prices_create, name='prices_create'),
     path('projects/<int:project_id>/prices/<int:pk>/delete/', views.prices_delete, name='prices_delete'),
     path('updateprice/', views.prices_update_database, name='prices_update_database'),
     path('trial/', views.trial, name='trial'),
+    # adding one to the last code
+    path('prices/get_last_code/<int:project_id>/', views.get_last_code, name='get_last_code'),
+    path('task_component_quantity_update/', views.task_component_quantity_update, name='task_component_quantity_update'),
 
     # tasks
     path('tasks/<int:project_id>/create/', views.task_create, name='task_create'),

@@ -3,6 +3,7 @@ from django.contrib.auth.forms import AuthenticationForm
 from django.contrib.auth import login, authenticate, logout
 from django.urls import reverse
 from django.contrib import messages
+from tasks.models import Project, ActiveProject
 
 def login_request(request):
     if request.method == "POST":
@@ -14,6 +15,15 @@ def login_request(request):
             if user is not None:
                 login(request, user)
                 messages.info(request, f"You are now logged in as {username}.")
+                # Code to check if there is an active project
+                # Fetch user projects and active projects
+                user_projects = Project.objects.filter(tenant=user)
+                active_projects = ActiveProject.objects.filter(user=user)
+                ########################################################
+
+                # Store the project information in the session
+                request.session['user_projects_count'] = user_projects.count()
+                request.session['active_projects_count'] = active_projects.count()
                 return redirect(reverse('home'))
             else:
                 messages.error(request,"Invalid username or password.")

@@ -13,7 +13,7 @@ user.
 """
 
 class Project(models.Model):
-    name = models.CharField(max_length=30)
+    name = models.CharField(max_length=50)
     description = models.TextField(max_length=255)
     location = models.CharField(max_length=50)
     currency = models.CharField(max_length=10)

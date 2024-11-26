@@ -51,6 +51,6 @@ class Task(models.Model):
 class TaskComponent(models.Model):
     task = models.ForeignKey(Task, on_delete=models.CASCADE)
     code = models.ForeignKey(Price, on_delete=models.CASCADE, validators=[])
-    quantity = models.DecimalField(max_digits=20, decimal_places=3)
+    quantity = models.DecimalField(max_digits=30, decimal_places=6)
     
     

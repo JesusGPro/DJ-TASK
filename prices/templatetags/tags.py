@@ -21,28 +21,6 @@ def multiply(unit, quantity):
 def get_item(dictionary, key):
     return dictionary.get(key, 'N/A')
 
-# @register.simple_tag
-# def get_chapter_total(work_package_name, chapter_totals):
-#     # Check if the work_package_name is a number followed by zeros
-#     try:
-#         # Convert to integer
-#         number = int(work_package_name)
-#         # Determine the length of the number
-#         length = len(str(number))
-#         # Check if it is a number followed by zeros
-
-#         divider = 10 ** (length - 1)
-#         rest = number % divider
-
-#         if rest == 0:
-#             key = str(int(number / divider))
-#             return chapter_totals.get(key, 'N/A')
-
-#         else:
-#             return "It is not a chapter of subchapter"
-#     except ValueError:
-#         return 'N/A'  # If conversion fails, return 'N/A'
-
 @register.simple_tag
 def get_chapter_total(work_package_name, chapter_totals):
     try:
@@ -62,5 +40,52 @@ def get_chapter_total(work_package_name, chapter_totals):
         return 'N/A'  # If no valid chapter is found
     except Exception as e:
         return 'N/A'  # In case of any error, return 'N/A'
+    
+
+@register.filter
+def get_letter(letters, index):
+    if index > 25:
+        return 'N/A'
+    else: 
+        return letters[index]
+    
+
+@register.filter
+def get_first_part(string, int):
+    string_list = []
+    for s in string[:int]:
+        string_list.append(s)
+    first_part = ''.join(string_list)
+    return first_part
+
+@register.filter
+def get_second_part(string, int):
+    string_list = []
+    for s in string[int:]:
+        string_list.append(s)
+    second_part = ''.join(string_list)
+    return second_part
+
+@register.filter
+def get_second_value(value):
+    if isinstance(value, tuple) and len(value) > 1:
+        return value[1]
+    return None  
+
+@register.filter
+def get_first_value(value):
+    if isinstance(value, tuple) and len(value) > 1:
+        return value[0]
+    return None  
+
+
+@register.filter
+def get_first_part_upper(string, int):
+    string_list = [s.upper() for s in string[:int]]
+    
+    first_part = ''.join(string_list)
+    return first_part
+    
+
 
 
