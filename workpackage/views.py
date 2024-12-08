@@ -74,6 +74,12 @@ def budget_create(request, work_package_id):
     else:
         wp_budget.save()
 
+    # Update or create the WorkpackageTotals
+    wp_budget, created = WorkpackageTotals.objects.update_or_create(
+        workpackage=work_package,
+        defaults={'total': grand_total}
+    )
+    
     formatted_grand_total = "{:,.2f}".format(grand_total)
 
 
@@ -97,6 +103,15 @@ def budget_create(request, work_package_id):
             )
             budget.save()
             messages.success(request, 'Work created successfully!')
+
+            # Recalculate the grand total after adding the new work
+            works = Work.objects.filter(work_package=work_package_id).select_related('task')
+            grand_total = sum(work.work_amount for work in works)
+
+            # Update the WorkpackageTotals
+            wp_budget.total = grand_total
+            wp_budget.save()
+
             return redirect(reverse('budget_create', args=[work_package_id]))
         else:
             messages.error(request, 'Work could not be created.')
@@ -125,7 +140,7 @@ def get_task_details(request, task_id):
     })
 
 def budget_delete(request, work_package_id, pk):
-    print("pk: ", pk)
+    # print("pk: ", pk)
     work = Work.objects.get(pk=pk)
     task_to_erase_id = work.task_id
     task_obj = Task.objects.get(pk=task_to_erase_id)
@@ -202,7 +217,7 @@ def budget_edit(request, work_package_id, pk):
     task = Task.objects.get(pk=task_to_edit_id)
     workpackage_obj = WorkPackage.objects.get(pk=work_package_id)
     measurements = Measurement.objects.filter(work=work)
-    print("measurements: ", measurements)
+    # print("measurements: ", measurements)
 
     if not measurements.exists():
         grand_total = Work.objects.get(id=pk).quantity
@@ -225,7 +240,7 @@ def budget_edit(request, work_package_id, pk):
             new_measurement.work = work  # Set the work field
             new_measurement.save()  # Save the new Measurement instance
             measurements = Measurement.objects.filter(work=work)
-            print("measurements: ", measurements)
+            # print("measurements: ", measurements)
             messages.success(request, 'Quantity measurement created successfully!')
             return redirect(reverse('budget_edit', args=[work_package_id, pk]))
         else:
@@ -246,7 +261,7 @@ def measurement_update(request):
         data = json.loads(request.body)
         measurement_obj = Measurement.objects.get(id=data['id'])
 
-        print("measurement_obj: ", measurement_obj)
+        # print("measurement_obj: ", measurement_obj)
         field_name = data['name']
         field_value = Decimal(data['value'])
         setattr(measurement_obj, field_name, field_value)
@@ -263,7 +278,7 @@ def measurement_update(request):
         grand_total = 0
         for measurement in measurements:
             grand_total += measurement.partial
-        print("This is the calculated Grand Total after sending from JS: ", grand_total)
+        # print("This is the calculated Grand Total after sending from JS: ", grand_total)
         work.quantity = grand_total
         work.save()
 
@@ -275,9 +290,9 @@ def measurement_update(request):
 
 def update_work_quantity(request, work_package_id):
     if request.method == 'POST':
-        print('Received request:', request)
-        print('Request method:', request.method)
-        print('Request data:', request.POST) 
+        # print('Received request:', request)
+        # print('Request method:', request.method)
+        # print('Request data:', request.POST) 
         data = json.loads(request.body)
         quantity = Decimal(data['quantity'])
         work_obj = Work.objects.get(id=work_package_id)

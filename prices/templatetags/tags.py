@@ -48,7 +48,9 @@ def get_letter(letters, index):
         return 'N/A'
     else: 
         return letters[index]
-    
+
+   
+   
 
 @register.filter
 def get_first_part(string, int):

@@ -89,6 +89,20 @@ You can create reports of any Work Package, if you click here you will get a men
 An example of a view with measurements:
 ![alt text](/static/instructions/image-13.png)
 
+#### 2.-WorkPackge Report Div level in CSI budget
+
+If you are working with CSI MasterFormat, you have a Project and then you have 3 or 4 levels, for examaple:
+Division 03 - Concrete
+Level 1 - 03 20 00 Concrete Reinforcing
+Level 2 - 03 21 00 Reinforcing Steel
+Level 3 - 03 21 13 Galvanized Reinforcing Steel
+Level 4 - 03 21 13.01 Galvanized Reinforcing Steel for foundations
+
+After level 2 or 3 we will have the tasks or items.
+
+In Line 7 tender example, the Work Packages with tasks will be the one with 3 figures, for example WP 3.1.6: Bridge/Viaduct, son the code for this Work Package will be 3 followed by 1 and then followed by 06, because we will have in this level more than 10, and then followed by 000, so the final level number will be "3106000".
+
+After that we will create Division 03 - Concrete, that will have the level "3106030", then we can add Division 05 - Metals, that will have the level "3106050", the we will add, Division 31 - Earthworks, that will have the level "3106310". All this Divisions will have as parents 3106000.
 
 
 

@@ -15,9 +15,10 @@
         <table id="workpackage-list" class="table table-striped">
           <thead>
             <tr>
-              <th>Level</th>
-              <th>Description</th>
-              <th>Parent</th>
+              <th width="15%">Level</th>
+              <th width="50%">Description</th>
+              <th width="15%">Parent</th>
+              <th></th>
               <th></th>
             </tr>
           </thead>
@@ -48,6 +49,10 @@
                   {% csrf_token %}
                   <a href="{% url 'workpackage_delete' wp.pk %}" class="btn btn-danger">Delete</a>
                 </form>
+                
+              </td>
+              <td>
+                <a href="{% url 'budget_create' wp.pk %}" class="btn btn-success">Assign Budget</a>
               </td>
             </tr>
             {% endfor %}

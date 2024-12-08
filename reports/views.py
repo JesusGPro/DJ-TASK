@@ -15,8 +15,28 @@ from collections import defaultdict
 from openpyxl import Workbook
 from openpyxl.styles import Font, PatternFill, Alignment, Border, Side
 from datetime import datetime
+from django.db import transaction
+from django.db.models import Sum, F
 
 current_datetime = datetime.now().strftime("%Y-%m-%d_%H-%M")  # Format as YYYY-MM-DD_HH-MM
+
+# Update WorkpackageTotals in report transactions.
+def update_workpackage_totals():
+    work_packages = WorkPackage.objects.all()
+    with transaction.atomic():
+        for work_package in work_packages:
+            # Get the total for the current work package from the totals dictionary
+            chapter_totals = calculate_chapter_totals(work_packages)
+            # Calculate the total amount by multiplying quantity with task price
+            total_str = chapter_totals.get(work_package.name, 0.00)
+            # Remove commas and convert to Decimal
+            total = Decimal(total_str.replace(',', ''))
+                        
+            # Update or create the WorkpackageTotals
+            WorkpackageTotals.objects.update_or_create(
+                workpackage=work_package,
+                defaults={'total': total}
+            )
 
 def work_package_assign(request):
     active_project = ActiveProject.objects.get(user=request.user)
@@ -56,6 +76,7 @@ def work_package_assign(request):
 
 
 def work_package_report(request, work_package_id):
+    update_workpackage_totals()
     work_package_id = work_package_id
     active_project = ActiveProject.objects.get(user=request.user)
     project_id = active_project.project_id
@@ -93,6 +114,7 @@ def work_package_report(request, work_package_id):
     return render(request, 'reports/work_package_report.html', context)
 
 def work_package_pdf(request, work_package_id):
+    update_workpackage_totals()
     work_package_id = work_package_id
     active_project = ActiveProject.objects.get(user=request.user)
     project_id = active_project.project_id
@@ -141,6 +163,7 @@ def work_package_pdf(request, work_package_id):
 
 
 def work_package_csv(request, work_package_id):
+    update_workpackage_totals()
     work_package_id = work_package_id
     active_project = ActiveProject.objects.get(user=request.user)
     project_id = active_project.project_id
@@ -214,6 +237,7 @@ def work_package_csv(request, work_package_id):
     return response
 ######################### WorkPackage Report Total ###########################################################3
 def work_package_total_pick(request):
+    update_workpackage_totals()
     active_project = ActiveProject.objects.get(user=request.user)
     project_id = active_project.project_id
     project = Project.objects.get(id=project_id)
@@ -263,7 +287,7 @@ def calculate_chapter_totals(wps):
         if wp.parent_id:
             work_packages[wp.parent.name].append(wp.name)
 
-
+    # print("work_packages[wp.name]: ", work_packages)
     work_package_totals = {}
 
     for wp in wps:
@@ -299,6 +323,7 @@ def calculate_chapter_totals(wps):
     return formatted_totals
 
 def work_package_report_total(request):
+    update_workpackage_totals()
     active_project = ActiveProject.objects.get(user=request.user)
     project_id = active_project.project_id
     project = Project.objects.get(id=project_id)
@@ -319,27 +344,24 @@ def work_package_report_total(request):
         zips= []
         
         # Check if there are any works for the current work package
-        if works.exists():
-            # Extract task IDs from the works
-            task_ids = works.values_list('task_id', flat=True)
-           
-            # Retrieve tasks based on the task IDs found
-            tasks_retrieved = Task.objects.filter(id__in=task_ids).order_by('id')  # You can order as needed
-            # Create a mapping of task IDs to task objects for easy lookup
-            task_dict = {task.id: task for task in tasks_retrieved}
-            # Prepare the zipped data
-            zips = [(work, task_dict.get(work.task_id)) for work in works]
-            
-            # Attempt to get the grand total, handle the case where it doesn't exist
-            try:
-                grand_total = WorkpackageTotals.objects.get(workpackage=work_package)
-                grand_total_value = float(grand_total.total)
-                formatted_grand_total = "{:,.2f}".format(grand_total_value)
-            except WorkpackageTotals.DoesNotExist:
-                formatted_grand_total = "0.00"  
-        else:
-            tasks_retrieved = []  # No works means no tasks
-            formatted_grand_total = "0.00"  # or handle it as you prefer
+        
+        # Extract task IDs from the works
+        task_ids = works.values_list('task_id', flat=True)
+        
+        # Retrieve tasks based on the task IDs found
+        tasks_retrieved = Task.objects.filter(id__in=task_ids).order_by('id')  # You can order as needed
+        # Create a mapping of task IDs to task objects for easy lookup
+        task_dict = {task.id: task for task in tasks_retrieved}
+        # Prepare the zipped data
+        zips = [(work, task_dict.get(work.task_id)) for work in works]
+
+        try:
+            grand_total = WorkpackageTotals.objects.get(workpackage=work_package)
+            grand_total_value = float(grand_total.total)
+            formatted_grand_total = "{:,.2f}".format(grand_total_value)
+        except WorkpackageTotals.DoesNotExist:
+            formatted_grand_total = "0.00"  
+        
 
         reports.append({
             'work_package_id': work_package.id,
@@ -364,6 +386,7 @@ def work_package_report_total(request):
 
 
 def work_package_report_total_pdf(request):
+    update_workpackage_totals()
     active_project = ActiveProject.objects.get(user=request.user)
     project_id = active_project.project_id
     project = Project.objects.get(id=project_id)
@@ -383,28 +406,24 @@ def work_package_report_total_pdf(request):
 
         zips= []
         
-        # Check if there are any works for the current work package
-        if works.exists():
-            # Extract task IDs from the works
-            task_ids = works.values_list('task_id', flat=True)
-           
-            # Retrieve tasks based on the task IDs found
-            tasks_retrieved = Task.objects.filter(id__in=task_ids).order_by('id')  # You can order as needed
-            # Create a mapping of task IDs to task objects for easy lookup
-            task_dict = {task.id: task for task in tasks_retrieved}
-            # Prepare the zipped data
-            zips = [(work, task_dict.get(work.task_id)) for work in works]
-            
-            # Attempt to get the grand total, handle the case where it doesn't exist
-            try:
-                grand_total = WorkpackageTotals.objects.get(workpackage=work_package)
-                grand_total_value = float(grand_total.total)
-                formatted_grand_total = "{:,.2f}".format(grand_total_value)
-            except WorkpackageTotals.DoesNotExist:
-                formatted_grand_total = "0.00"  
-        else:
-            tasks_retrieved = []  # No works means no tasks
-            formatted_grand_total = "0.00"  # or handle it as you prefer
+        # Extract task IDs from the works
+        task_ids = works.values_list('task_id', flat=True)
+        
+        # Retrieve tasks based on the task IDs found
+        tasks_retrieved = Task.objects.filter(id__in=task_ids).order_by('id')  # You can order as needed
+        # Create a mapping of task IDs to task objects for easy lookup
+        task_dict = {task.id: task for task in tasks_retrieved}
+        # Prepare the zipped data
+        zips = [(work, task_dict.get(work.task_id)) for work in works]
+        
+        # Attempt to get the grand total, handle the case where it doesn't exist
+        try:
+            grand_total = WorkpackageTotals.objects.get(workpackage=work_package)
+            grand_total_value = float(grand_total.total)
+            formatted_grand_total = "{:,.2f}".format(grand_total_value)
+        except WorkpackageTotals.DoesNotExist:
+            formatted_grand_total = "0.00"  
+        
 
         reports.append({
             'work_package_id': work_package.id,
@@ -413,6 +432,7 @@ def work_package_report_total_pdf(request):
             'zips': zips,
             'formatted_grand_total': formatted_grand_total
         })
+
 
     # Calculate chapter totals using the separate function
     chapter_totals = calculate_chapter_totals(work_packages)
@@ -438,6 +458,7 @@ def work_package_report_total_pdf(request):
 
 
 def work_package_report_total_csv(request):
+    update_workpackage_totals()
     active_project = ActiveProject.objects.get(user=request.user)
     project_id = active_project.project_id
     project = Project.objects.get(id=project_id)
@@ -495,6 +516,7 @@ def work_package_report_total_csv(request):
 
 ######################### WorkPackage Report Total summary ############################################################33333333333
 def work_package_report_total_summary(request):
+    update_workpackage_totals()
     active_project = ActiveProject.objects.get(user=request.user)
     project_id = active_project.project_id
     project = Project.objects.get(id=project_id)
@@ -535,6 +557,7 @@ def work_package_report_total_summary(request):
     return render(request, 'reports/work_package_report_total_summary.html', context)
 
 def work_package_report_total_summary_pdf(request):
+    update_workpackage_totals()
     active_project = ActiveProject.objects.get(user=request.user)
     project_id = active_project.project_id
     project = Project.objects.get(id=project_id)
@@ -634,6 +657,7 @@ def work_package_report_total_summary_csv(request):
 
 ######################### WorkPackage Report Total with measurements ###########################################################3
 def work_package_report_measurement_total(request):
+    update_workpackage_totals()
     active_project = ActiveProject.objects.get(user=request.user)
     project_id = active_project.project_id
     project = Project.objects.get(id=project_id)
@@ -692,6 +716,7 @@ def work_package_report_measurement_total(request):
     return render(request, 'reports/work_package_report_measurements_total.html', context)
 
 def work_package_report_measurement_total_pdf(request):
+    update_workpackage_totals()
     active_project = ActiveProject.objects.get(user=request.user)
     project_id = active_project.project_id
     project = Project.objects.get(id=project_id)
@@ -751,6 +776,7 @@ def work_package_report_measurement_total_pdf(request):
 
 
 def work_package_report_measurement_total_csv(request):
+    update_workpackage_totals()
     active_project = ActiveProject.objects.get(user=request.user)
     project_id = active_project.project_id
     project = Project.objects.get(id=project_id)
@@ -845,6 +871,7 @@ def work_package_report_measurement_total_csv(request):
 
 
 def work_package_report_measurement_total_excel(request):
+    update_workpackage_totals()
     active_project = ActiveProject.objects.get(user=request.user)
     project_id = active_project.project_id
     project = Project.objects.get(id=project_id)
@@ -961,6 +988,7 @@ def work_package_report_measurement_total_excel(request):
 ######################### Component ###########################################################################
 
 def component_report(request):
+    update_workpackage_totals()
     active_project = ActiveProject.objects.get(user=request.user)
     project_id = active_project.project_id
     project = Project.objects.get(id=project_id)
@@ -969,6 +997,7 @@ def component_report(request):
     return render(request, 'reports/component_report.html', {'project': project, 'prices': prices})
 
 def component_report_pdf(request):
+    update_workpackage_totals()
     # sending the info to the html:
     active_project = ActiveProject.objects.get(user=request.user)
     project_id = active_project.project_id
@@ -988,6 +1017,7 @@ def component_report_pdf(request):
     return response
 
 def component_report_csv(request):
+    update_workpackage_totals()
     # sending the info to the html:
     active_project = ActiveProject.objects.get(user=request.user)
     project_id = active_project.project_id
@@ -1023,6 +1053,7 @@ def component_report_csv(request):
 ################################### Tasks ###############################################################3
 
 def task_report(request):
+    update_workpackage_totals()
     active_project = ActiveProject.objects.get(user=request.user)
     project_id = active_project.project_id
     project = Project.objects.get(id=project_id)
@@ -1031,6 +1062,7 @@ def task_report(request):
     return render(request, 'reports/task_report.html', {'project': project, 'tasks': tasks})
 
 def task_report_pdf(request):
+    update_workpackage_totals()
     active_project = ActiveProject.objects.get(user=request.user)
     project_id = active_project.project_id
     project = Project.objects.get(id=project_id)
@@ -1049,6 +1081,7 @@ def task_report_pdf(request):
     return response
 
 def task_report_csv(request):
+    update_workpackage_totals()
     active_project = ActiveProject.objects.get(user=request.user)
     project_id = active_project.project_id
     project = Project.objects.get(id=project_id)
@@ -1082,6 +1115,7 @@ def task_report_csv(request):
 
 
 def task_report_weight(request):
+    update_workpackage_totals()
     tasks_dict={}
     tasks_weight = {}
     works = Work.objects.all()
@@ -1125,6 +1159,7 @@ def task_report_weight(request):
 
 
 def task_report_weight_pdf(request):
+    update_workpackage_totals()
     tasks_dict={}
     tasks_weight = {}
     works = Work.objects.all()
@@ -1178,6 +1213,7 @@ def task_report_weight_pdf(request):
 
 
 def task_report_weight_csv(request):
+    update_workpackage_totals()
     tasks_dict={}
     tasks_weight = {}
     works = Work.objects.all()
@@ -1245,6 +1281,7 @@ def task_report_weight_csv(request):
 
 
 def task_components_report(request):
+    update_workpackage_totals()
     # Project id and name
     active_project = ActiveProject.objects.get(user=request.user)
     project_id = active_project.project_id
@@ -1273,6 +1310,7 @@ def task_components_report(request):
     return render(request, 'reports/tasks_components_report.html', context)
 
 def task_components_report_pdf(request):
+    update_workpackage_totals()
     # Project id and name
     active_project = ActiveProject.objects.get(user=request.user)
     project_id = active_project.project_id
@@ -1303,6 +1341,7 @@ def task_components_report_pdf(request):
     return response
 
 def task_components_report_csv(request):
+    update_workpackage_totals()
     # Project id and name
     active_project = ActiveProject.objects.get(user=request.user)
     project_id = active_project.project_id
@@ -1400,6 +1439,7 @@ def task_components_report_csv(request):
 
 
 def task_components_report_excel(request):
+    update_workpackage_totals()
     # Project id and name
     active_project = ActiveProject.objects.get(user=request.user)
     project_id = active_project.project_id
@@ -1481,6 +1521,7 @@ def task_components_report_excel(request):
 
 #################### Work Package with Measurements ##################################################
 def work_package_report_measurement(request, work_package_id):
+    update_workpackage_totals()
     work_package_id = work_package_id
     active_project = ActiveProject.objects.get(user=request.user)
     project_id = active_project.project_id
@@ -1527,6 +1568,7 @@ def work_package_report_measurement(request, work_package_id):
 
 
 def work_package_report_measurement_pdf(request, work_package_id):
+    update_workpackage_totals()
     work_package_id = work_package_id
     active_project = ActiveProject.objects.get(user=request.user)
     project_id = active_project.project_id
@@ -1582,6 +1624,7 @@ def work_package_report_measurement_pdf(request, work_package_id):
 
 
 def work_package_report_measurement_csv(request, work_package_id):
+    update_workpackage_totals()
     work_package_id = work_package_id
     active_project = ActiveProject.objects.get(user=request.user)
     project_id = active_project.project_id
@@ -1694,6 +1737,7 @@ from openpyxl.styles import Font, Alignment
 from openpyxl.utils import get_column_letter
 
 def work_package_report_measurement_xlsx(request, work_package_id):
+    update_workpackage_totals()
     work_package_id = work_package_id
     active_project = ActiveProject.objects.get(user=request.user)
     project_id = active_project.project_id
@@ -1818,9 +1862,9 @@ def work_packagechildren_assign(request):
     wps = WorkPackage.objects.all().order_by('name')
     name = []
     for wp in wps:
-        if len(wp.name) > 3:
-            remaining_part = wp.name[3:]
-            if remaining_part== '000' and wp.name[0] !='0' and wp.name[1] !='0'and wp.name[2] !='0':
+        if len(wp.name) > 4:
+            remaining_part = wp.name[4:]
+            if remaining_part== '0000' and wp.name[0] !='0' and wp.name[1] !='0'and wp.name[3] !='0':
                 name.append(wp)
 
     wps = name
@@ -1869,7 +1913,8 @@ def get_children(work_package_id):
     for wp in wps:
         if wp.name.startswith(prefix):
             children.append(wp.name)
-    del children[0]
+
+    # del children[0]
 
     return children
 
@@ -1879,6 +1924,8 @@ def prepare_work_package_context(work_package_id, user):
     project_id = active_project.project_id
     project = Project.objects.get(id=project_id)
     project_description = project.description
+
+    update_workpackage_totals()
 
     children = get_children(work_package_id)
     wps_children = WorkPackage.objects.filter(name__in=children)
@@ -1919,22 +1966,39 @@ def prepare_work_package_context(work_package_id, user):
     third_children_dict = {}
     third_children_tasks = {}
 
+    # Initialize letter index
+    item = 1
+    
     for fc in first_children:
         second_children = WorkPackage.objects.filter(parent=fc.id).order_by('name')
         second_children_dict[fc.name] = second_children
+
         for sc in second_children:
             third_children = WorkPackage.objects.filter(parent=sc.id).order_by('name')
+            
+            # Initialize a list to hold the third children information for this second child
+            third_children_info = []
+            
             for third in third_children:
-                third_children_dict[sc.name] = third.name, third.description
+                # Append a tuple of third child's name and description to the list
+                third_children_info.append((third.name, third.description))
                 works = Work.objects.filter(work_package=third.id).select_related('task')
-                task_ids = list(Work.objects.filter(work_package=third.id).values_list('task_id', flat=False))
-                task_ids = [task_id[0] for task_id in task_ids]
+                task_ids = list(Work.objects.filter(work_package=third.id).values_list('task_id', flat=True))
                 tasks_retrieved = sorted(Task.objects.filter(id__in=task_ids), key=lambda x: task_ids.index(x.id))
-                third_children_tasks[third.name] = works, tasks_retrieved
                 
+                # Store works and tasks in a dictionary for the third child
+                third_children_tasks[third.name] = works, tasks_retrieved
+            
+            # Store the list of third children information in the second children dictionary
+            third_children_dict[sc.name] = third_children_info
+
+
     workpackage_dict = {}
+    
+
     for workpackage_key, (work_queryset, task_list) in third_children_tasks.items():
         task_details = []
+       
         for task in task_list:
             work_objects = work_queryset.filter(task=task)
             quantity = 0
@@ -1943,14 +2007,25 @@ def prepare_work_package_context(work_package_id, user):
                 first_work = work_objects.first()
                 quantity = first_work.quantity
                 amount = first_work.work_amount
+
             task_details.append({
+                'item': chr(item+64),
                 'name': task.name,
                 'unit': task.unit,
                 'quantity': "{:,.2f}".format(quantity),
                 'price': "{:,.2f}".format(task.price),
                 'amount': "{:,.2f}".format(amount),
             })
+            item += 1
+            # Check if item exceeds 75 and reset if necessary
+            if item > 27:
+                item = 1  # Reset to 1 (which corresponds to 'A')
+            
             workpackage_dict[workpackage_key] = task_details
+    
+    # print("Second children: ", second_children_dict)
+    # print("Third children: ", third_children)
+    # print("workpackage dictionary: ", workpackage_dict)
 
     return {
         'project_id': project_id,
@@ -1997,392 +2072,6 @@ def work_packagechildren_report_pdf(request, work_package_id):
     response['Content-Disposition'] = f'attachment; filename="work_package_report_{work_package_id}.pdf"'
 
     return response
-
-# def work_packagechildren_report_excel(request, work_package_id):
-#     # Define the maximum number of rows per page
-#     MAX_ROWS_PER_PAGE = 43
-
-#     def add_blank_line_with_borders(sheet):
-#         # Add a blank line
-#         sheet.append(["", "", "", ""])
-        
-#         # Set lateral borders for the blank line
-#         last_row = sheet.max_row  # Get the last row number
-#         for col_index in range(1, 5):  # Loop through columns A to D (1 to 4)
-#             cell = sheet.cell(row=last_row, column=col_index)
-#             cell.border = Border(left=Side(style='thin'), right=Side(style='thin'))  # Apply thin border only to left and right    
-
-#     def add_blank_line_with_borders_divisions(sheet):
-#         # Add a blank line
-#         sheet.append(["", "", "", "", "", "", ""])
-        
-#         # Set lateral borders for the blank line
-#         last_row = sheet.max_row  # Get the last row number
-#         for col_index in range(1, 8):  # Loop through columns A to D (1 to 4)
-#             cell = sheet.cell(row=last_row, column=col_index)
-#             cell.border = Border(left=Side(style='thin'), right=Side(style='thin'))  # Apply thin border only to left and right    
-
-#     def add_column_borders(sheet):
-#         for col in range(1, 8):  # This will loop through columns 1 to 7
-#                 cell = sheet.cell(row=start_row, column=col)  # Get the actual cell object
-#                 cell.border = children_border  # Apply the border to the cell
-
-#     def get_first_part(string, int):
-#         string_list = []
-#         for s in string[:int]:
-#             string_list.append(s)
-#         first_part = ''.join(string_list)
-#         return first_part
-
-
-#     def get_middle_part(string, int1, int2):
-#         string_list = []
-#         for s in string[int1:int2]:
-#             string_list.append(s)
-#         middle_part = ''.join(string_list)
-#         return middle_part
-    
-#     def get_second_part(string, int):
-#         string_list = []
-#         for s in string[int:]:
-#             string_list.append(s)
-#         second_part = ''.join(string_list)
-#         return second_part
-    
-#     # Function to get letters
-#     def get_letter(index):
-#         letters = list('ABCDEFGHIJKLMNOPQRSTUVWXYZ')
-#         if index > 25:
-#             return 'N/A'  # Return 'N/A' for indices above 25
-#         else: 
-#             return letters[index]
-
-#     # Prepare the context data using the helper function
-#     context = prepare_work_package_context(work_package_id, request.user)
-
-#     # Create a new Excel workbook and select the active worksheet
-#     workbook = Workbook()
-#     sheet = workbook.active
-#     sheet.title = f"SUM - {context['first_part']}"
-
-#     # Define styles for the headers############################################################################33
-#     header_font = Font(name='Helvetica', bold=True, size=10, color="000000")  # Black font
-#     header_fill = PatternFill(start_color="FCD5B5", end_color="FCD5B5", fill_type="solid")  # Background color
-#     center_alignment = Alignment(horizontal='center', vertical='center')
-#     left_alignment = Alignment(horizontal='left', vertical='center')
-
-#     # Define border styles
-#     thin_border = Border(left=Side(style='thin'), 
-#                         right=Side(style='thin'), 
-#                         top=Side(style='thin'), 
-#                         bottom=Side(style='thin'))
-
-#     # Add the header
-#     headers = ["ITEM", "SPECS", "DESCRIPTION", "AMOUNT"]
-#     sheet.append(headers)
-
-#     # Set the height of the header row (1.06 in points is approximately 15.9 in Excel)
-#     sheet.row_dimensions[1].height = 30.5  # Row index is 2 because Excel is 1-indexed
-
-#     # Style the header row
-#     for cell in sheet[1]:  # Access the first row (header row)
-#         cell.font = header_font
-#         cell.fill = header_fill
-#         cell.alignment = center_alignment
-#         cell.border = thin_border 
-
-#     # Apply double border to the bottom of the header row
-#     for col_index in range(1, len(headers) + 1):  # Loop through the number of headers
-#         cell = sheet.cell(row=1, column=col_index)
-#         cell.border = Border(top=cell.border.top, 
-#                             left=cell.border.left, 
-#                             right=cell.border.right, 
-#                             bottom=Side(style='double'))  # Set double border for the bottom
-
-    
-#     ########################### END of Header , starts SubHeader ###############################
-
-#     # Add the subheader
-#     subheader_first_part = context['first_part']  # Use context for first part
-#     subheader_second_part = context['second_part']  # Use context for second part
-    
-
-#     # Style the subheader row
-#     sheet.merge_cells(start_row=2, start_column=1, end_row=2, end_column=2)  # Merge the first cell for first_part
-#     cell_first_part = sheet.cell(row=2, column=1)
-#     cell_first_part.font = Font(name='Helvetica', bold=True, size=10, color="000000", underline="single")  # Underlined font
-#     cell_first_part.fill = PatternFill(start_color="FDEADA", end_color="FDEADA", fill_type="solid")  # Background color
-#     cell_first_part.alignment = center_alignment
-#     cell_first_part.border = thin_border
-#     cell_first_part.value = subheader_first_part 
-
-#     # Merge cells for the second part of the subheader
-#     sheet.merge_cells(start_row=2, start_column=3, end_row=2, end_column=4)  # Merge last two cells for second_part
-#     cell_second_part = sheet.cell(row=2, column=3)
-#     cell_second_part.value = subheader_second_part  # Set the combined value for second_part
-#     cell_second_part.font = Font(name='Helvetica', bold=True, size=10, color="000000", underline="single")  # Underlined font
-#     cell_second_part.fill = PatternFill(start_color="FDEADA", end_color="FDEADA", fill_type="solid")  # Background color
-#     cell_second_part.alignment = left_alignment
-#     cell_second_part.border = thin_border
-
-#     # Set the height of the subheader row (optional)
-#     sheet.row_dimensions[2].height = 32  # Row index is 2 for the subheader row
-
-#     # Set the column widths
-#     column_widths = [8, 12, 60, 25]  # Widths for columns A, B, C, D
-#     for col_index, width in enumerate(column_widths, start=1):  # start=1 for A=1, B=2, C=3, D=4
-#         sheet.column_dimensions[sheet.cell(row=1, column=col_index).column_letter].width = width
-#     ############################################### End of Subheader ######################################################33
-    
-    
-#     add_blank_line_with_borders(sheet)
-
-#     # Add summary section
-#     sheet.append(["", "", "SUMMARY", ""])
-#     # Set border for the blank line
-#     last_row = sheet.max_row  # Get the last row number
-#     for col_index in range(1, 5):  # Loop through columns A to D (1 to 4)
-#         cell = sheet.cell(row=last_row, column=col_index)
-#         cell.border = Border(left=Side(style='thin'), right=Side(style='thin'))  # Apply thin border only to left and right
-#     # Apply bold font to the "SUMMARY" cell
-#     summary_cell = sheet.cell(row=last_row, column=3)  # Column C is the third column
-#     summary_cell.font = Font(name='Helvetica', bold=True, size=10, color="000000")  # Set font to bold
-
-#     add_blank_line_with_borders(sheet)
-
-#     for index, first_child in enumerate(context.get('first_children', [])):
-#         sheet.append([get_letter(index), "",  first_child.description,  context['first_children_budget'].get(first_child.name, "")])
-#         # Set border for the blank line
-#         last_row = sheet.max_row  # Get the last row number
-#         for col_index in range(1, 5):  # Loop through columns A to D (1 to 4)
-#             cell = sheet.cell(row=last_row, column=col_index)
-#             cell.border = Border(left=Side(style='thin'), right=Side(style='thin'))  # Apply thin border only to left and right
-#             # Apply font style to the Division lines
-#             summary_cell = sheet.cell(row=last_row, column=col_index)  
-#             summary_cell.font = Font(name='Helvetica', bold=False, size=9, color="000000")  # Set font to bold
-#             cell = sheet.cell(row=last_row, column=1)
-#             cell.alignment = Alignment(horizontal='center', vertical='center')
-
-#     # Get the current number of filled rows
-#     current_filled_rows = sheet.max_row
-    
-#     # Calculate remaining lines
-#     remaining_lines = MAX_ROWS_PER_PAGE - (current_filled_rows % MAX_ROWS_PER_PAGE)
-    
-
-      
-#     # Calculate how many blank lines to add
-#     lines_to_add = remaining_lines + 1 
-#     for _ in range(lines_to_add):
-#         add_blank_line_with_borders(sheet)
-
-
-#     # Total row
-#     sheet.append(["", "", f"{context['first_part']} TOTAL CARRIED TO MAIN SCHEDULE", context['work_package_budget']])
-#     last_row = sheet.max_row  # Get the last row number
-#     # Set the height of the total row
-#     sheet.row_dimensions[last_row].height = 30.5
-#     for col_index in range(1, 5):  # Loop through columns A to D (1 to 4)
-#         cell = sheet.cell(row=last_row, column=col_index)
-#         cell.border = Border(left=Side(style='thin'), right=Side(style='thin'), top=Side(style='medium'),
-#             bottom=Side(style='medium'))  # Apply thin border only to left and right and thick to top and bottom
-#         cell.alignment = Alignment(horizontal='center', vertical='center')
-#         # Apply font style to the Division lines
-#         summary_cell = sheet.cell(row=last_row, column=col_index)  
-#         summary_cell.font = Font(name='Helvetica', bold=True, size=10, color="000000")  # Set font to bold
-#     ############################################################### DIVISION SHEETS ###############################################
-#     ###############################################################################################################################    
-#     for first_child in context['first_children']:
-#         div_number = get_middle_part(first_child.description, 9, 11)
-#         sheet = workbook.create_sheet(title=f"D{div_number}")
-
-#         division_headers = ["ITEM", "SPECS", "DESCRIPTION", "UNIT", "QTY", "RATE", "AMOUNT"]
-#         sheet.append(division_headers)
-#         last_row = sheet.max_row
-#         sheet.row_dimensions[last_row].height = 30.5
-
-#         column_widths = [6, 10, 35, 6, 15, 15, 20]
-
-#         for col_index in range(1, 8):  # Loop through columns A to G (1 to 7)
-#             sheet.column_dimensions[sheet.cell(row=1, column=col_index).column_letter].width = column_widths[col_index - 1]
-#             cell = sheet.cell(row=last_row, column=col_index)
-#             cell.border = Border(left=Side(style='thin'), right=Side(style='thin'), top=Side(style='thin'),
-#                 bottom=Side(style='double'))  # Apply thin border only to left and right and thick to top and bottom
-#             cell.font = header_font
-#             cell.alignment = center_alignment
-#             cell.fill = header_fill
-
-#          # Add the subheader ################################################################
-#         subheader_first_part = context['first_part']  # Use context for first part
-#         subheader_second_part = context['second_part']  # Use context for second part
-        
-
-#         # Style the subheader row
-#         sheet.merge_cells(start_row=2, start_column=1, end_row=2, end_column=2)  # Merge the first cell for first_part
-#         cell_first_part = sheet.cell(row=2, column=1)
-#         cell_first_part.font = Font(name='Helvetica', bold=True, size=10, color="000000", underline="single")  # Underlined font
-#         cell_first_part.fill = PatternFill(start_color="FDEADA", end_color="FDEADA", fill_type="solid")  # Background color
-#         cell_first_part.alignment = center_alignment
-#         cell_first_part.border = thin_border
-#         cell_first_part.value = subheader_first_part 
-
-#         # Merge cells for the second part of the subheader
-#         sheet.merge_cells(start_row=2, start_column=3, end_row=2, end_column=6)  # Merge last two cells for second_part
-#         cell_second_part = sheet.cell(row=2, column=3)
-#         cell_second_part.value = subheader_second_part  # Set the combined value for second_part
-#         cell_second_part.font = Font(name='Helvetica', bold=True, size=10, color="000000", underline="single")  # Underlined font
-#         cell_second_part.fill = PatternFill(start_color="FDEADA", end_color="FDEADA", fill_type="solid")  # Background color
-#         cell_second_part.alignment = left_alignment
-#         cell_second_part.border = Border(left=Side(style='thin'), right=Side(style='thin'),  # Add thin right border
-#                       top=Side(style='double'), bottom=Side(style='thin'))
-#         last_row = sheet.max_row
-#         cell = sheet.cell(row=last_row, column=7)
-#         cell.fill = PatternFill(start_color="FDEADA", end_color="FDEADA", fill_type="solid")
-#         cell.border = Border(left=Side(style='thin'), right=Side(style='thin'),  # Add thin right border
-#                       top=Side(style='double'), bottom=Side(style='thin'))
-
-#         # Set the height of the subheader row (optional)
-#         sheet.row_dimensions[2].height = 32  # Row index is 2 for the subheader row
-
-#         # End of subheader###############################################################
-#         # Add division data
-#         last_row = sheet.max_row + 1 
-#         # Set the content of the third column in the last row
-#         division_cell = sheet.cell(row=last_row, column=3)
-#         division_cell.value = first_child.description.upper()  # Set the description in the third column
-
-#         # Apply thin borders to all columns for the last row
-#         for col_index in range(1, 8):  # Loop through columns A to G (1 to 7)
-#             cell = sheet.cell(row=last_row, column=col_index)
-#             cell.border = Border(left=Side(style='thin'), right=Side(style='thin'), 
-#                                 top=Side(style='thin'), bottom=Side(style='thin'))  # Apply thin borders on all sides
-
-#         # Set the font style for the content in the third column
-#         division_cell.font = Font(name='Helvetica', bold=True, size=10, color="000000")  # Set font to bold
-        
-#         add_blank_line_with_borders_divisions(sheet)
-#         # styles
-#         children_font_bold = Font(name='Helvetica', bold=True, size=10, color="000000")  # Black font
-#         children_font = Font(name='Helvetica', bold=False, size=9, color="000000")  # Black font
-#         children_font_italic_underline = Font(name='Helvetica', italic=True, underline='single', size=10, color="000000")
-#         children_alignment_center = Alignment(horizontal='center', vertical='center')
-#         children_alignment_left = Alignment(horizontal='left', vertical='center')
-#         children_border = Border(left=Side(style='thin'), right=Side(style='thin'))
-
-#         second_children_dictionary = context['second_children_dict']
-#         second_children_object = second_children_dictionary[first_child.name]
-
-#         # Start writing from the last row + 1 to avoid overwriting
-#         start_row = sheet.max_row + 1
-
-#         page_value = 0
-
-#         for second in second_children_object:
-#             first_part = get_first_part(second.description, 8)
-#             second_part = get_second_part(second.description, 11)
-            
-#             # Set the height of the total row
-#             cell = sheet.cell(row=start_row, column=2)
-#             cell.border = children_border
-#             cell.alignment = children_alignment_center
-#             cell.font = children_font_bold
-#             cell.value = first_part
-#             cell = sheet.cell(row=start_row, column=3)
-#             cell.alignment = children_alignment_left
-#             cell.font = children_font_bold
-#             cell.value = second_part
-#             add_column_borders(sheet)
-
-#             # Move to the next row for the next object
-#             start_row += 1
-
-#             third_children_dictionary = context['third_children_dict']
-#             third_children = third_children_dictionary[second.name]
-
-#             cell = sheet.cell(row=start_row, column=3)
-#             cell.alignment = children_alignment_left
-#             cell.font = children_font_italic_underline
-#             cell.value = third_children[1]
-#             add_column_borders(sheet)
-
-#             start_row += 1
-
-#             workpackage_dict = context['workpackage_dict']
-#             tasks = workpackage_dict[third_children[0]]
-
-#             for task in tasks:
-#                 cell = sheet.cell(row=start_row, column=3)
-#                 cell.alignment = children_alignment_left
-#                 cell.font = children_font
-#                 cell.value = task['name']
-                
-
-#                 cell = sheet.cell(row=start_row, column=4)
-#                 cell.alignment = children_alignment_center
-#                 cell.font = children_font
-#                 cell.value = task['unit']
-                
-
-#                 cell = sheet.cell(row=start_row, column=5)
-#                 cell.alignment = children_alignment_center
-#                 cell.font = children_font
-#                 cell.value = task['quantity']
-
-#                 cell = sheet.cell(row=start_row, column=6)
-#                 cell.alignment = children_alignment_center
-#                 cell.font = children_font
-#                 cell.value = task['price']
-
-#                 cell = sheet.cell(row=start_row, column=7)
-#                 cell.alignment = children_alignment_center
-#                 cell.font = children_font
-#                 cell.value = task['amount']
-#                 amount_str = task['amount'].strip().replace(',', '')
-#                 page_value += float(amount_str)
-                
-#                 add_column_borders(sheet)
-#                 start_row += 1
-
-                
-#         #################################Summary at the end of the page ###################################
-#         # Calculate how many blank lines to add
-#         current_filled_rows = sheet.max_row
-        
-#         print("current filled rows: ", current_filled_rows)
-#         # Calculate remaining lines
-#         remaining_lines = MAX_ROWS_PER_PAGE - (current_filled_rows)
-        
-#         lines_to_add = remaining_lines + 1 
-
-#         print("lines to add: ", lines_to_add)
-
-        
-#         for _ in range(lines_to_add):
-#             add_blank_line_with_borders_divisions(sheet)
-
-
-#         # Total row
-#         sheet.append(["", "", f"PAGE - TOTAL CARRIED TO {first_child.description.upper()}"])
-#         last_row = sheet.max_row  # Get the last row number
-#         # Set the height of the total row
-#         sheet.row_dimensions[last_row].height = 30.5
-#         for col_index in range(1, 8):  # Loop through columns A to G (1 to 7)
-#             cell = sheet.cell(row=last_row, column=col_index)
-#             cell.border = Border(left=Side(style='thin'), right=Side(style='thin'), top=Side(style='medium'),
-#                 bottom=Side(style='medium'))  # Apply thin border only to left and right and thick to top and bottom
-#             cell.alignment = Alignment(horizontal='left', vertical='center')
-#             # Apply font style to the Division lines
-#         summary_cell = sheet.cell(row=last_row, column=7)  
-#         summary_cell.font = Font(name='Helvetica', bold=True, size=10, color="000000")  # Set font to bold
-#         summary_cell.alignment = children_alignment_center
-#         summary_cell.value = "{:,.2f}".format(page_value)
-        
-    
-#     response = HttpResponse(content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
-#     response['Content-Disposition'] = f'attachment; filename="{context["first_part"]}.xlsx"'
-#     workbook.save(response)
-
-#     return response
 
 def work_packagechildren_report_excel(request, work_package_id):
     # Define the maximum number of rows per page
@@ -2590,7 +2279,7 @@ def work_packagechildren_report_excel(request, work_package_id):
         last_row = sheet.max_row
         sheet.row_dimensions[last_row].height = 30.5
 
-        column_widths = [6, 10, 35, 6, 15, 15, 20]
+        column_widths = [6, 10, 55, 6, 15, 15, 20]
 
         for col_index in range(1, 8):  # Loop through columns A to G (1 to 7)
             sheet.column_dimensions[sheet.cell(row=1, column=col_index).column_letter].width = column_widths[col_index - 1]
@@ -2656,6 +2345,7 @@ def work_packagechildren_report_excel(request, work_package_id):
         children_font_italic_underline = Font(name='Helvetica', italic=True, underline='single', size=10, color="000000")
         children_alignment_center = Alignment(horizontal='center', vertical='center')
         children_alignment_left = Alignment(horizontal='left', vertical='center')
+        children_alignment_left_wrap = Alignment(horizontal='left', vertical='center', wrap_text=True)
         children_border = Border(left=Side(style='thin'), right=Side(style='thin'))
 
         second_children_dictionary = context['second_children_dict']
@@ -2699,49 +2389,52 @@ def work_packagechildren_report_excel(request, work_package_id):
             third_children_dictionary = context['third_children_dict']
             third_children = third_children_dictionary[second.name]
 
-            cell = sheet.cell(row=start_row, column=3)
-            cell.alignment = children_alignment_left
-            cell.font = children_font_italic_underline
-            cell.value = third_children[1]
-            add_column_borders(sheet)
-
-            start_row += 1
-
-            workpackage_dict = context['workpackage_dict']
-            tasks = workpackage_dict[third_children[0]]
-
-            for task in tasks:
+            for third_child in third_children:
+                # print("third_child: ", third_child)
                 cell = sheet.cell(row=start_row, column=3)
-                cell.alignment = children_alignment_left
-                cell.font = children_font
-                cell.value = task['name']
-                
-
-                cell = sheet.cell(row=start_row, column=4)
-                cell.alignment = children_alignment_center
-                cell.font = children_font
-                cell.value = task['unit']
-                
-
-                cell = sheet.cell(row=start_row, column=5)
-                cell.alignment = children_alignment_center
-                cell.font = children_font
-                cell.value = task['quantity']
-
-                cell = sheet.cell(row=start_row, column=6)
-                cell.alignment = children_alignment_center
-                cell.font = children_font
-                cell.value = task['price']
-
-                cell = sheet.cell(row=start_row, column=7)
-                cell.alignment = children_alignment_center
-                cell.font = children_font
-                cell.value = task['amount']
-                amount_str = task['amount'].strip().replace(',', '')
-                page_value += float(amount_str)
-                
+                cell.alignment = children_alignment_left_wrap
+                cell.font = children_font_italic_underline
+                cell.value = third_child[1]
                 add_column_borders(sheet)
+
                 start_row += 1
+
+                workpackage_dict = context['workpackage_dict']
+                tasks = workpackage_dict[third_child[0]]
+
+                for task in tasks:
+                    cell = sheet.cell(row=start_row, column=3)
+                    cell.alignment = children_alignment_left_wrap
+                    cell.font = children_font
+                    cell.value = task['name']
+                    
+
+                    cell = sheet.cell(row=start_row, column=4)
+                    cell.alignment = children_alignment_center
+                    cell.font = children_font
+                    cell.value = task['unit']
+                    
+
+                    cell = sheet.cell(row=start_row, column=5)
+                    cell.alignment = children_alignment_center
+                    cell.font = children_font
+                    cell.value = task['quantity']
+
+                    cell = sheet.cell(row=start_row, column=6)
+                    cell.alignment = children_alignment_center
+                    cell.font = children_font
+                    cell.value = task['price']
+
+                    cell = sheet.cell(row=start_row, column=7)
+                    cell.alignment = children_alignment_center
+                    cell.font = children_font
+                    # cell.value = task['amount']
+                    cell.value = float(task['amount'].strip().replace(',', ''))
+                    amount_str = task['amount'].strip().replace(',', '')
+                    page_value += float(amount_str)
+                    
+                    add_column_borders(sheet)
+                    start_row += 1
 
         # After processing all second children, check the remaining page total
         if current_page_total > 0:
@@ -2752,13 +2445,11 @@ def work_packagechildren_report_excel(request, work_package_id):
         # Calculate how many blank lines to add
         current_filled_rows = sheet.max_row
         
-        print("current filled rows: ", current_filled_rows)
+        
         # Calculate remaining lines
         remaining_lines = MAX_ROWS_PER_PAGE - (current_filled_rows)
         
         lines_to_add = remaining_lines + 1 
-
-        print("lines to add: ", lines_to_add)
 
         
         for _ in range(lines_to_add):

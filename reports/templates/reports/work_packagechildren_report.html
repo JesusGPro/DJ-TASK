@@ -47,6 +47,7 @@
   </style>
 </head>
 <body>
+  
 {% comment %} First Spreadsheet Summary {% endcomment %}
 <div class="container">
   <table id="heading">
@@ -80,6 +81,7 @@
       <br>
       <tbody>
         {% for first_child in first_children %}
+        
         <tr>
           <td width="10%" style="text-align: center;">{{ letters|get_letter:forloop.counter0}}</td>
           <td width="12%"></td>
@@ -142,50 +144,58 @@
     <tbody>
       <br>
       {% for second in second_children_dict|get_item:first_child.name %}
-      <tr>
-        <td width="5%"></td>
-        <td width="10%"><strong>{{ second.description|get_first_part:9 }}</strong></td>
-        <td width="45%"><strong>{{ second.description|get_second_part:10 }}</strong></td>
-        <td width="5%"></td>
-        <td width="15%"></td> 
-        <td width="10%"></td>
-        <td width="10%"></td>
-        
-      <tr>
-        <td width="5%"></td>
-        <td width="10%"></td>
-        <td width="45%">
-          <span style="font-style: italic; text-decoration: underline;">
-            {{ third_children_dict|get_item:second.name|get_second_value }}
-          </span></td>
-        <td width="5%"></td>
-        <td width="15%"></td> 
-        <td width="10%"></td>
-        <td width="10%"></td>
-      </tr>
-    
-    {% with key=third_children_dict|get_item:second.name|get_first_value %}
-    {% if workpackage_dict|get_item:key %}
-      {% for item in workpackage_dict|get_item:key %}
-      
           <tr>
-              <td width="5%" style="text-align: center;">{{ letters|get_letter:forloop.counter0}}</td>
+              <td width="5%">
+              </td>
+              <td width="10%"><strong>{{ second.description|get_first_part:8 }}</strong></td>
+              <td width="45%"><strong>{{ second.description|get_second_part:10 }}</strong></td>
+              <td width="5%"></td>
+              <td width="15%"></td> 
               <td width="10%"></td>
-              <td width="45%">{{ item.name }}</td>
-              <td width="5%">{{ item.unit }}</td>
-              <td width="15%">{{ item.quantity }}</td>
-              <td width="10%">{{ item.price }}</td>
-              <td width="10%">{{ item.amount }}</td>
+              <td width="10%"></td>
           </tr>
+          
+          {% for third in third_children_dict|get_item:second.name %}
+          
+              <tr>
+                <td width="5%">
+                  {% comment %} {% get_next_letter as letter %} {% endcomment %}
+                </td>
+                  <td width="10%"></td>
+                  <td width="45%">
+                      <span style="font-style: italic; text-decoration: underline;">
+                          {{ third.1 }}  <!-- Accessing the name of the third child -->
+                      </span>
+                  </td>
+                  <td width="5%"></td>
+                  <td width="15%"></td> 
+                  <td width="10%"></td>
+                  <td width="10%"></td>
+              </tr>
+              
+              {% with key=third.0 %}
+              
+                  {% if workpackage_dict|get_item:key %}
+                  
+                      {% for item in workpackage_dict|get_item:key %}
+                          <tr>
+                              {% comment %} <td width="5%" style="text-align: center;">{{ letters|get_letter:forloop.counter0 }}</td> {% endcomment %}
+                              <td width="5%" style="text-align: center;">
+                                {{ item.item }}
+                              </td>
+                              <td width="10%"></td>
+                              <td width="45%">{{ item.name }}</td>
+                              <td width="5%">{{ item.unit }}</td>
+                              <td width="15%">{{ item.quantity }}</td>
+                              <td width="10%">{{ item.price }}</td>
+                              <td width="10%">{{ item.amount }}</td>                              
+                          </tr>
+                      {% endfor %}
+                  {% endif %}
+              {% endwith %}
+          {% endfor %}
       {% endfor %}
-    {% endif %}
-    {% endwith %}
-        
-        
-      </tr>
-      {% endfor %}
-      
-    </tbody>
+  </tbody>
     <br>
   </table>
 </div>
